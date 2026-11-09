@@ -1,10 +1,10 @@
 // ==WindhawkMod==
-// @id              dynamic-island-for-windows
-// @name            Dynamic Island for Windows
-// @description     A living, breathing pill overlay inspired by iPhone's Dynamic Island. Reacts to media, downloads, clipboard, battery, and more.
-// @version         1.4.0
+// @id              dynamic-island-for-windows-gcal
+// @name            Dynamic Island for Windows (Google Calendar)
+// @description     A living, breathing pill overlay inspired by iPhone's Dynamic Island, with Google Calendar events from a private iCal link. Reacts to media, downloads, clipboard, battery, and more.
+// @version         1.4.0-gcal.1
 // @author          Himanshu
-// @github          https://github.com/devcode90
+// @github          https://github.com/SentientPlatypus
 // @include         windhawk.exe
 // @compilerOptions -lole32 -loleaut32 -lshcore -ld2d1 -ldwrite -ldwmapi -lgdi32 -luser32 -lshell32 -lruntimeobject -lwindowscodecs -lsetupapi -lwinhttp -lpdh -lwinmm
 // @license         MIT
@@ -31,7 +31,7 @@ The Dynamic Island intelligently expands to display context-aware dashboards. Yo
 | **Media Player** | Shows live album art, track details, audio waveforms, and full playback controls. | ![Media](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/media-v2.png) |
 | **Live Lyrics** | Real-time synchronized lyrics with inline collapsed view and full lyrics tab. | ![Live Lyrics](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/main/previews/lyrics.png) |
 | **Blur & Acrylic** | Genuine Windows DWM blur and acrylic backdrop effects for modern depth. | ![Blur & Acrylic](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/main/previews/blur-acrylic.png) |
-| **Calendar** | A monthly grid that always fits its rows, with today marked in the accent colour. | ![Calendar](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/calendar.png) |
+| **Calendar** | A monthly grid that always fits its rows, with today marked in the accent colour. A private Google Calendar iCal link adds event dots and the next few upcoming events. | ![Calendar](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/calendar.png) |
 | **Weather** | Real-time weather stats powered by wttr.in, including wind speed, humidity, and "feels like" temperature. | ![Weather](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/weather-v2.png) |
 | **Hardware Monitor** | CPU, RAM, GPU, disk and live network throughput, with load bars that turn amber past 75% and red past 90%. | ![Hardware Monitor](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/hardware-monitor.png) |
 | **Game Overlay** | Real-time FPS, CPU, GPU, RAM and disk, sized to whichever metrics you enable. | ![Gamebar](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/gamebar-v2.png) |
@@ -90,6 +90,24 @@ The Dynamic Island intelligently expands to display context-aware dashboards. Yo
 
 ---
 
+## 📅 Google Calendar
+
+The calendar tab can show events from your Google Calendar without signing in. The mod reads the secret iCal link Google already publishes for that calendar. Nothing is sent to a third party, and a wrong or unreachable link just leaves the month grid as it was.
+
+1. Open [Google Calendar](https://calendar.google.com) in a browser.
+2. Under **My calendars** or **Other calendars**, hover the calendar you want and click the three dots.
+3. Choose **Settings and sharing**.
+4. Scroll to **Integrate calendar** and copy **Secret address in iCal format**. It looks like `https://calendar.google.com/calendar/ical/.../basic.ics`.
+5. In Windhawk, open this mod's settings and paste that address into **Google Calendar → iCal URLs**. More than one calendar is fine: separate the addresses with commas or put each one on its own line.
+6. Days with events get a small dot in the accent colour, and the next few events are listed beside the month. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
+
+The secret address is a private link: anyone who has it can read that calendar, so treat it like a password. The feed is refreshed in the background (every 15 minutes by default). If the PC is offline, the island keeps the last events it successfully loaded.
+
+**Author:** Himanshu ([devcode90](https://github.com/devcode90))
+**Fork:** [SentientPlatypus](https://github.com/SentientPlatypus)
+
+---
+
 ## 📝 Feedback & Credits
 
 ### Feedback / Support / Bug Reports
@@ -98,6 +116,8 @@ The Dynamic Island intelligently expands to display context-aware dashboards. Yo
 - Suggestions for UI/UX or new integrations are always welcome.
 
 ### Credits
+- **[Himanshu (devcode90) @GitHub](https://github.com/devcode90)**: Original author of Dynamic Island for Windows.
+- **[Geneustace Wicaksono (SentientPlatypus) @GitHub](https://github.com/SentientPlatypus)**: Google Calendar fork. Events from a private iCal address on the calendar tab, and an upcoming-event heads-up on the collapsed island.
 - **[Sarthak Singh (sarthakaksh) @GitHub](https://github.com/sarthakaksh)**: Major feature overhaul including smoothing animations, right-click focus timer, strip mode, lyrics for songs, song recognition (Shazam) , quick lookup, Cross-Source Media Switching, hover clock, robust media controls, zero-CPU instant hide shortcut, Bluetooth battery integration, image clipboard thumbnails, and full-screen autohide fixes.
 - **[ciizerr @GitHub](https://github.com/ciizerr)**: Improved the UI by refining layout alignment, fixing dashboard scaling, and enhancing calendar and weather module integration.
 - **[ChrisSch-dev @GitHub](https://github.com/ChrisSch-dev)**: Added album title support, word wrapping for weather descriptions, sleep resume fixes, and various performance/movement stability improvements.
@@ -566,6 +586,20 @@ We love community contributions! To ensure high-quality updates, please follow t
       - '8': 8 seconds (default)
       - '12': 12 seconds (most reliable)
   $name: Modules & Features
+- GoogleCalendar:
+  - IcsUrls: ""
+    $name: iCal URLs
+    $description: "One or more Google Calendar secret iCal addresses (Settings and sharing, then Integrate calendar, then Secret address in iCal format). Separate extra calendars with commas or new lines. Leave blank to keep the month grid only."
+  - RefreshMinutes: 15
+    $name: Refresh interval (minutes)
+    $description: How often to re-download the calendars. 15 by default. The last successful download is kept if a refresh fails.
+  - HeadsUp: true
+    $name: Upcoming event on the collapsed island
+    $description: When a timed event starts soon, show its title and how many minutes remain in the collapsed pill. Media and lyrics still take priority.
+  - HeadsUpMinutes: 10
+    $name: Heads-up window (minutes)
+    $description: Show the collapsed heads-up when an event starts within this many minutes. 10 by default.
+  $name: Google Calendar
 - Shortcuts:
   - HideShowHotkeyEnabled: true
     $name: Enable hide/show hotkey
@@ -693,6 +727,1303 @@ We love community contributions! To ensure high-quality updates, please follow t
 
 using Microsoft::WRL::ComPtr;
 using namespace std::chrono_literals;
+
+// DI_ICS_ENGINE_BEGIN
+// Portable iCalendar (RFC 5545) parser and recurrence expander.
+// No Windhawk, WinHTTP, or UI dependencies. The mod compiles this inline;
+// tests/ics_parser_test.cpp extracts this region and compiles it on Linux.
+//
+// Time zones come from the feed's own VTIMEZONE blocks (Google's secret iCal
+// URLs include them). A TZID is never hardcoded. Instants are resolved to UTC,
+// then the PC's local zone is applied only when a wall clock is needed.
+
+#include <algorithm>
+#include <cctype>
+#include <cstdint>
+#include <cstring>
+#include <ctime>
+#include <map>
+#include <set>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+namespace di_ics {
+
+struct Civil {
+    int year = 1970;
+    int month = 1;
+    int day = 1;
+    int hour = 0;
+    int minute = 0;
+    int second = 0;
+};
+
+inline bool operator<(const Civil& a, const Civil& b) {
+    if (a.year != b.year) return a.year < b.year;
+    if (a.month != b.month) return a.month < b.month;
+    if (a.day != b.day) return a.day < b.day;
+    if (a.hour != b.hour) return a.hour < b.hour;
+    if (a.minute != b.minute) return a.minute < b.minute;
+    return a.second < b.second;
+}
+
+inline bool operator==(const Civil& a, const Civil& b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day &&
+           a.hour == b.hour && a.minute == b.minute && a.second == b.second;
+}
+
+inline bool operator<=(const Civil& a, const Civil& b) { return !(b < a); }
+
+inline int PackDate(int y, int m, int d) { return y * 10000 + m * 100 + d; }
+inline int PackDate(const Civil& c) { return PackDate(c.year, c.month, c.day); }
+
+// Howard Hinnant's public-domain civil-from-days conversion. Day 0 is 1970-01-01.
+inline int DaysFromCivil(int y, int m, int d) {
+    y -= m <= 2;
+    const int era = (y >= 0 ? y : y - 399) / 400;
+    const unsigned yoe = static_cast<unsigned>(y - era * 400);
+    const unsigned doy = (153u * static_cast<unsigned>(m + (m > 2 ? -3 : 9)) + 2u) / 5u +
+                         static_cast<unsigned>(d) - 1u;
+    const unsigned doe = yoe * 365u + yoe / 4u - yoe / 100u + doy;
+    return era * 146097 + static_cast<int>(doe) - 719468;
+}
+
+inline Civil CivilFromDays(int z) {
+    z += 719468;
+    const int era = (z >= 0 ? z : z - 146096) / 146097;
+    const unsigned doe = static_cast<unsigned>(z - era * 146097);
+    const unsigned yoe = (doe - doe / 1460u + doe / 36524u - doe / 146096u) / 365u;
+    const int y = static_cast<int>(yoe) + era * 400;
+    const unsigned doy = doe - (365u * yoe + yoe / 4u - yoe / 100u);
+    const unsigned mp = (5u * doy + 2u) / 153u;
+    const unsigned day = doy - (153u * mp + 2u) / 5u + 1u;
+    const unsigned month = mp < 10u ? mp + 3u : mp - 9u;
+    Civil c;
+    c.year = y + (month <= 2u ? 1 : 0);
+    c.month = static_cast<int>(month);
+    c.day = static_cast<int>(day);
+    return c;
+}
+
+inline int PositiveMod(int a, int b) {
+    const int r = a % b;
+    return r < 0 ? r + b : r;
+}
+
+// 0 = Sunday .. 6 = Saturday. 1970-01-01 was a Thursday.
+inline int Weekday(const Civil& c) {
+    return PositiveMod(DaysFromCivil(c.year, c.month, c.day) + 4, 7);
+}
+
+inline int DaysInMonth(int y, int m) {
+    static const int kDays[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (m < 1 || m > 12) return 30;
+    if (m == 2 && ((y % 4 == 0 && y % 100 != 0) || y % 400 == 0)) return 29;
+    return kDays[m];
+}
+
+inline Civil AddDays(Civil c, int days) {
+    Civil n = CivilFromDays(DaysFromCivil(c.year, c.month, c.day) + days);
+    n.hour = c.hour;
+    n.minute = c.minute;
+    n.second = c.second;
+    return n;
+}
+
+inline int64_t CivilToUnixUtc(const Civil& c) {
+    std::tm tm{};
+    tm.tm_year = c.year - 1900;
+    tm.tm_mon = c.month - 1;
+    tm.tm_mday = c.day;
+    tm.tm_hour = c.hour;
+    tm.tm_min = c.minute;
+    tm.tm_sec = c.second;
+    tm.tm_isdst = 0;
+#if defined(_WIN32)
+    return static_cast<int64_t>(_mkgmtime(&tm));
+#else
+    return static_cast<int64_t>(timegm(&tm));
+#endif
+}
+
+inline int64_t CivilToUnixLocal(const Civil& c) {
+    std::tm tm{};
+    tm.tm_year = c.year - 1900;
+    tm.tm_mon = c.month - 1;
+    tm.tm_mday = c.day;
+    tm.tm_hour = c.hour;
+    tm.tm_min = c.minute;
+    tm.tm_sec = c.second;
+    tm.tm_isdst = -1;
+    return static_cast<int64_t>(std::mktime(&tm));
+}
+
+inline Civil UnixToCivil(int64_t unixUtc, bool local) {
+    const std::time_t t = static_cast<std::time_t>(unixUtc);
+    std::tm tm{};
+#if defined(_WIN32)
+    if (local) {
+        localtime_s(&tm, &t);
+    } else {
+        gmtime_s(&tm, &t);
+    }
+#else
+    if (local) {
+        localtime_r(&t, &tm);
+    } else {
+        gmtime_r(&t, &tm);
+    }
+#endif
+    Civil c;
+    c.year = tm.tm_year + 1900;
+    c.month = tm.tm_mon + 1;
+    c.day = tm.tm_mday;
+    c.hour = tm.tm_hour;
+    c.minute = tm.tm_min;
+    c.second = tm.tm_sec;
+    return c;
+}
+
+inline Civil UnixUtcToLocal(int64_t unixUtc) { return UnixToCivil(unixUtc, true); }
+inline Civil UnixUtcToUtcCivil(int64_t unixUtc) { return UnixToCivil(unixUtc, false); }
+
+inline int64_t UnixNow() {
+#if defined(_WIN32)
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    ULARGE_INTEGER u;
+    u.LowPart = ft.dwLowDateTime;
+    u.HighPart = ft.dwHighDateTime;
+    return static_cast<int64_t>(u.QuadPart / 10000000ULL) - 11644473600LL;
+#else
+    return static_cast<int64_t>(std::time(nullptr));
+#endif
+}
+
+// local wall clock minus the zone's UTC offset (seconds east of UTC).
+inline int64_t WallToUnix(const Civil& wall, int offsetEastSeconds) {
+    return CivilToUnixUtc(wall) - static_cast<int64_t>(offsetEastSeconds);
+}
+
+enum class Freq { None, Daily, Weekly, Monthly, Yearly };
+
+struct ByDay {
+    int ord = 0;   // 0 = every, 1 = first, -1 = last
+    int wday = 0;  // 0 = Sunday .. 6 = Saturday
+};
+
+struct RRule {
+    Freq freq = Freq::None;
+    int interval = 1;
+    std::vector<ByDay> byday;
+    std::vector<int> bymonth;
+    std::vector<int> bymonthday;
+    int wkst = 1;  // Monday, per RFC 5545's default
+    bool hasUntil = false;
+    bool untilIsUtc = false;
+    bool untilIsDate = false;
+    Civil untilCivil{};
+    int64_t untilUtc = 0;
+    int count = 0;  // 0 = unbounded
+};
+
+struct When {
+    Civil civil{};
+    bool dateOnly = false;
+    bool utc = false;
+    std::string tzid;
+    bool valid = false;
+};
+
+struct Observance {
+    int offsetFrom = 0;
+    int offsetTo = 0;
+    Civil dtstart{};
+    bool hasRule = false;
+    RRule rule;
+};
+
+struct Zone {
+    std::string tzid;
+    int initialOffset = 0;
+    std::vector<Observance> observances;
+};
+
+struct Event {
+    std::string summary;
+    std::string location;
+    bool cancelled = false;
+    When start;
+    When end;
+    bool hasEnd = false;
+    int durationSec = 0;  // timed events; 0 means "use end" or zero length
+    bool durationFromEnd = false;
+    int allDayLength = 1;
+    RRule rule;
+    std::vector<When> exdates;
+    bool hasRecurrenceId = false;
+    When recurrenceId;
+};
+
+struct Occurrence {
+    std::string summary;
+    std::string location;
+    bool allDay = false;
+    int64_t startUtc = 0;
+    int64_t endUtc = 0;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int hour = 0;
+    int minute = 0;
+    int second = 0;
+    // Local dates the occurrence covers: [span, spanEnd).
+    int spanYear = 0;
+    int spanMonth = 0;
+    int spanDay = 0;
+    int spanEndYear = 0;
+    int spanEndMonth = 0;
+    int spanEndDay = 0;
+};
+
+struct ExpandWindow {
+    int64_t startUtc = 0;
+    int64_t endUtc = 0;
+    int fromYear = 1970;
+    int fromMonth = 1;
+    int fromDay = 1;
+    int toYear = 1970;  // exclusive
+    int toMonth = 1;
+    int toDay = 1;
+};
+
+inline ExpandWindow WindowFromLocalDates(Civil fromInclusive, Civil toExclusive) {
+    ExpandWindow w;
+    w.fromYear = fromInclusive.year;
+    w.fromMonth = fromInclusive.month;
+    w.fromDay = fromInclusive.day;
+    w.toYear = toExclusive.year;
+    w.toMonth = toExclusive.month;
+    w.toDay = toExclusive.day;
+    Civil start = fromInclusive;
+    start.hour = start.minute = start.second = 0;
+    Civil end = toExclusive;
+    end.hour = end.minute = end.second = 0;
+    w.startUtc = CivilToUnixLocal(start);
+    w.endUtc = CivilToUnixLocal(end);
+    return w;
+}
+
+// From the first of the PC's current local month through `futureDays` after today.
+inline ExpandWindow WindowCoveringLocal(int64_t nowUtc, int futureDays) {
+    const Civil today = UnixUtcToLocal(nowUtc);
+    Civil from;
+    from.year = today.year;
+    from.month = today.month;
+    from.day = 1;
+    if (futureDays < 1) futureDays = 1;
+    const Civil to = AddDays(Civil{today.year, today.month, today.day, 0, 0, 0}, futureDays + 1);
+    return WindowFromLocalDates(from, to);
+}
+
+// ASCII only. std::toupper is locale-sensitive and, on Windows, a macro that
+// breaks the std:: qualification.
+inline char AsciiUpper(unsigned char ch) {
+    return (ch >= 'a' && ch <= 'z') ? static_cast<char>(ch - 'a' + 'A') : static_cast<char>(ch);
+}
+
+inline std::string UpperCopy(std::string_view in) {
+    std::string out(in);
+    for (char& ch : out) {
+        ch = AsciiUpper(static_cast<unsigned char>(ch));
+    }
+    return out;
+}
+
+inline bool EqualsIgnoreCase(std::string_view a, std::string_view b) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (AsciiUpper(static_cast<unsigned char>(a[i])) !=
+            AsciiUpper(static_cast<unsigned char>(b[i]))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+inline int ParseInt(std::string_view s, int fallback = 0) {
+    if (s.empty()) return fallback;
+    size_t i = 0;
+    int sign = 1;
+    if (s[i] == '+') {
+        ++i;
+    } else if (s[i] == '-') {
+        sign = -1;
+        ++i;
+    }
+    if (i >= s.size() || !std::isdigit(static_cast<unsigned char>(s[i]))) return fallback;
+    int value = 0;
+    for (; i < s.size() && std::isdigit(static_cast<unsigned char>(s[i])); ++i) {
+        value = value * 10 + (s[i] - '0');
+    }
+    return sign * value;
+}
+
+inline int WeekdayFromToken(std::string_view day) {
+    const std::string u = UpperCopy(day);
+    if (u == "SU") return 0;
+    if (u == "MO") return 1;
+    if (u == "TU") return 2;
+    if (u == "WE") return 3;
+    if (u == "TH") return 4;
+    if (u == "FR") return 5;
+    if (u == "SA") return 6;
+    return -1;
+}
+
+inline ByDay ParseByDayToken(std::string_view tok) {
+    ByDay bd;
+    size_t i = 0;
+    int sign = 1;
+    if (!tok.empty() && tok[0] == '+') {
+        ++i;
+    } else if (!tok.empty() && tok[0] == '-') {
+        sign = -1;
+        ++i;
+    }
+    int ord = 0;
+    bool anyDigit = false;
+    while (i < tok.size() && std::isdigit(static_cast<unsigned char>(tok[i]))) {
+        anyDigit = true;
+        ord = ord * 10 + (tok[i] - '0');
+        ++i;
+    }
+    bd.ord = anyDigit ? sign * ord : 0;
+    bd.wday = WeekdayFromToken(tok.substr(i));
+    return bd;
+}
+
+inline int ParseUtcOffset(std::string_view s) {
+    // +hhmm, -hhmm, +hhmmss
+    if (s.size() < 5) return 0;
+    const int sign = s[0] == '-' ? -1 : 1;
+    const int hh = ParseInt(s.substr(1, 2));
+    const int mm = ParseInt(s.substr(3, 2));
+    const int ss = s.size() >= 7 ? ParseInt(s.substr(5, 2)) : 0;
+    return sign * (hh * 3600 + mm * 60 + ss);
+}
+
+inline int ParseDurationSeconds(std::string_view s) {
+    if (s.empty()) return 0;
+    size_t i = 0;
+    int sign = 1;
+    if (s[i] == '+') {
+        ++i;
+    } else if (s[i] == '-') {
+        sign = -1;
+        ++i;
+    }
+    if (i >= s.size() || (s[i] != 'P' && s[i] != 'p')) return 0;
+    ++i;
+    auto takeNumber = [&]() {
+        int n = 0;
+        while (i < s.size() && std::isdigit(static_cast<unsigned char>(s[i]))) {
+            n = n * 10 + (s[i] - '0');
+            ++i;
+        }
+        return n;
+    };
+    int seconds = 0;
+    bool inTime = false;
+    while (i < s.size()) {
+        if (s[i] == 'T' || s[i] == 't') {
+            inTime = true;
+            ++i;
+            continue;
+        }
+        const int n = takeNumber();
+        if (i >= s.size()) break;
+        const char unit = AsciiUpper(static_cast<unsigned char>(s[i]));
+        ++i;
+        if (unit == 'W') seconds += n * 7 * 86400;
+        else if (unit == 'D') seconds += n * 86400;
+        else if (unit == 'H') seconds += n * 3600;
+        else if (unit == 'M') seconds += n * 60;
+        else if (unit == 'S') seconds += n;
+        (void)inTime;
+    }
+    return sign * seconds;
+}
+
+inline When ParseWhenValue(std::string_view raw, bool dateOnly, bool utcFlag, const std::string& tzid) {
+    When w;
+    w.dateOnly = dateOnly;
+    w.tzid = tzid;
+    std::string digits;
+    digits.reserve(raw.size());
+    for (char ch : raw) {
+        if (ch == 'Z' || ch == 'z') {
+            utcFlag = true;
+            continue;
+        }
+        if (std::isdigit(static_cast<unsigned char>(ch))) digits.push_back(ch);
+    }
+    if (digits.size() < 8) return w;
+    w.civil.year = ParseInt(std::string_view(digits).substr(0, 4));
+    w.civil.month = ParseInt(std::string_view(digits).substr(4, 2));
+    w.civil.day = ParseInt(std::string_view(digits).substr(6, 2));
+    if (!dateOnly && digits.size() >= 14) {
+        w.civil.hour = ParseInt(std::string_view(digits).substr(8, 2));
+        w.civil.minute = ParseInt(std::string_view(digits).substr(10, 2));
+        w.civil.second = ParseInt(std::string_view(digits).substr(12, 2));
+    } else if (digits.size() == 8) {
+        w.dateOnly = true;
+    }
+    w.utc = utcFlag && !w.dateOnly;
+    w.valid = w.civil.month >= 1 && w.civil.month <= 12 && w.civil.day >= 1 &&
+              w.civil.day <= DaysInMonth(w.civil.year, w.civil.month);
+    return w;
+}
+
+inline RRule ParseRRule(std::string_view value) {
+    RRule rule;
+    size_t start = 0;
+    while (start < value.size()) {
+        size_t semi = value.find(';', start);
+        if (semi == std::string_view::npos) semi = value.size();
+        const std::string_view part = value.substr(start, semi - start);
+        const size_t eq = part.find('=');
+        if (eq != std::string_view::npos) {
+            const std::string key = UpperCopy(part.substr(0, eq));
+            const std::string_view val = part.substr(eq + 1);
+            if (key == "FREQ") {
+                const std::string freq = UpperCopy(val);
+                if (freq == "DAILY") rule.freq = Freq::Daily;
+                else if (freq == "WEEKLY") rule.freq = Freq::Weekly;
+                else if (freq == "MONTHLY") rule.freq = Freq::Monthly;
+                else if (freq == "YEARLY") rule.freq = Freq::Yearly;
+            } else if (key == "INTERVAL") {
+                rule.interval = std::max(1, ParseInt(val, 1));
+            } else if (key == "COUNT") {
+                rule.count = std::max(0, ParseInt(val, 0));
+            } else if (key == "WKST") {
+                const int wd = WeekdayFromToken(val);
+                if (wd >= 0) rule.wkst = wd;
+            } else if (key == "BYDAY") {
+                size_t p = 0;
+                while (p < val.size()) {
+                    size_t comma = val.find(',', p);
+                    if (comma == std::string_view::npos) comma = val.size();
+                    ByDay bd = ParseByDayToken(val.substr(p, comma - p));
+                    if (bd.wday >= 0) rule.byday.push_back(bd);
+                    p = comma + 1;
+                }
+            } else if (key == "BYMONTH") {
+                size_t p = 0;
+                while (p < val.size()) {
+                    size_t comma = val.find(',', p);
+                    if (comma == std::string_view::npos) comma = val.size();
+                    const int m = ParseInt(val.substr(p, comma - p));
+                    if (m >= 1 && m <= 12) rule.bymonth.push_back(m);
+                    p = comma + 1;
+                }
+            } else if (key == "BYMONTHDAY") {
+                size_t p = 0;
+                while (p < val.size()) {
+                    size_t comma = val.find(',', p);
+                    if (comma == std::string_view::npos) comma = val.size();
+                    const int d = ParseInt(val.substr(p, comma - p));
+                    if (d != 0) rule.bymonthday.push_back(d);
+                    p = comma + 1;
+                }
+            } else if (key == "UNTIL") {
+                When until = ParseWhenValue(val, false, false, "");
+                if (until.valid) {
+                    rule.hasUntil = true;
+                    rule.untilIsUtc = until.utc;
+                    rule.untilIsDate = until.dateOnly;
+                    rule.untilCivil = until.civil;
+                    if (until.utc) rule.untilUtc = CivilToUnixUtc(until.civil);
+                }
+            }
+        }
+        start = semi + 1;
+    }
+    if (rule.interval < 1) rule.interval = 1;
+    return rule;
+}
+
+inline std::string Unfold(std::string_view input) {
+    if (input.size() >= 3 && static_cast<unsigned char>(input[0]) == 0xEF &&
+        static_cast<unsigned char>(input[1]) == 0xBB &&
+        static_cast<unsigned char>(input[2]) == 0xBF) {
+        input.remove_prefix(3);
+    }
+    std::string out;
+    out.reserve(input.size());
+    for (size_t i = 0; i < input.size();) {
+        if (input[i] == '\r') {
+            ++i;
+            continue;
+        }
+        // RFC 5545: a CRLF (or LF) followed by one WSP is a fold, and both go away.
+        if (input[i] == '\n' && i + 1 < input.size() && (input[i + 1] == ' ' || input[i + 1] == '\t')) {
+            i += 2;
+            continue;
+        }
+        out.push_back(input[i]);
+        ++i;
+    }
+    return out;
+}
+
+inline std::string UnescapeText(std::string_view value) {
+    std::string out;
+    out.reserve(value.size());
+    for (size_t i = 0; i < value.size(); ++i) {
+        if (value[i] == '\\' && i + 1 < value.size()) {
+            const char n = value[++i];
+            if (n == 'n' || n == 'N') out.push_back('\n');
+            else out.push_back(n);
+        } else {
+            out.push_back(value[i]);
+        }
+    }
+    return out;
+}
+
+struct Property {
+    std::string name;
+    std::vector<std::pair<std::string, std::string>> params;
+    std::string value;
+};
+
+inline std::string Param(const Property& prop, std::string_view key) {
+    for (const auto& p : prop.params) {
+        if (EqualsIgnoreCase(p.first, key)) return p.second;
+    }
+    return {};
+}
+
+inline Property ParseProperty(const std::string& line) {
+    Property prop;
+    bool inQuotes = false;
+    size_t colon = std::string::npos;
+    for (size_t i = 0; i < line.size(); ++i) {
+        if (line[i] == '"') inQuotes = !inQuotes;
+        else if (line[i] == ':' && !inQuotes) {
+            colon = i;
+            break;
+        }
+    }
+    if (colon == std::string::npos) return prop;
+    const std::string left = line.substr(0, colon);
+    prop.value = line.substr(colon + 1);
+
+    std::string token;
+    std::vector<std::string> parts;
+    inQuotes = false;
+    for (size_t i = 0; i < left.size(); ++i) {
+        if (left[i] == '"') {
+            inQuotes = !inQuotes;
+            token.push_back(left[i]);
+        } else if (left[i] == ';' && !inQuotes) {
+            parts.push_back(token);
+            token.clear();
+        } else {
+            token.push_back(left[i]);
+        }
+    }
+    parts.push_back(token);
+    if (parts.empty()) return prop;
+    prop.name = UpperCopy(parts[0]);
+    for (size_t i = 1; i < parts.size(); ++i) {
+        const std::string& part = parts[i];
+        if (part.empty()) continue;
+        const size_t eq = part.find('=');
+        std::string key = UpperCopy(eq == std::string::npos ? part : std::string_view(part).substr(0, eq));
+        std::string val = eq == std::string::npos ? std::string() : part.substr(eq + 1);
+        if (val.size() >= 2 && val.front() == '"' && val.back() == '"') {
+            val = val.substr(1, val.size() - 2);
+        }
+        prop.params.emplace_back(std::move(key), std::move(val));
+    }
+    return prop;
+}
+
+inline When WhenFromProperty(const Property& prop) {
+    const std::string valueParam = UpperCopy(Param(prop, "VALUE"));
+    const bool dateOnly = valueParam == "DATE";
+    const std::string tzid = Param(prop, "TZID");
+    return ParseWhenValue(prop.value, dateOnly, false, tzid);
+}
+
+inline std::vector<When> ExdatesFromProperty(const Property& prop) {
+    std::vector<When> out;
+    const std::string valueParam = UpperCopy(Param(prop, "VALUE"));
+    const bool dateOnly = valueParam == "DATE";
+    const std::string tzid = Param(prop, "TZID");
+    size_t start = 0;
+    const std::string& raw = prop.value;
+    while (start < raw.size()) {
+        size_t comma = raw.find(',', start);
+        if (comma == std::string::npos) comma = raw.size();
+        std::string_view piece(raw.data() + start, comma - start);
+        while (!piece.empty() && (piece.front() == ' ' || piece.front() == '\t')) piece.remove_prefix(1);
+        if (!piece.empty()) {
+            When w = ParseWhenValue(piece, dateOnly, false, tzid);
+            if (w.valid) out.push_back(std::move(w));
+        }
+        start = comma + 1;
+    }
+    return out;
+}
+
+struct ParsedFeed {
+    std::map<std::string, Zone> zones;
+    std::vector<Event> events;
+};
+
+inline const Zone* FindZone(const std::map<std::string, Zone>& zones, const std::string& tzid) {
+    if (tzid.empty()) return nullptr;
+    const auto exact = zones.find(tzid);
+    if (exact != zones.end()) return &exact->second;
+    for (const auto& entry : zones) {
+        if (EqualsIgnoreCase(entry.first, tzid)) return &entry.second;
+    }
+    return nullptr;
+}
+
+// Nth weekday of a month. ord > 0 counts from the start, ord < 0 from the end.
+// Returns year 0 when that ordinal does not exist (a 5th Monday in a short month).
+inline Civil NthWeekdayOfMonth(int year, int month, int ord, int wday) {
+    Civil invalid;
+    invalid.year = 0;
+    if (month < 1 || month > 12 || wday < 0 || wday > 6 || ord == 0) return invalid;
+    const int dim = DaysInMonth(year, month);
+    if (ord > 0) {
+        const int firstWd = Weekday(Civil{year, month, 1, 0, 0, 0});
+        const int delta = PositiveMod(wday - firstWd, 7);
+        const int day = 1 + delta + (ord - 1) * 7;
+        if (day < 1 || day > dim) return invalid;
+        return Civil{year, month, day, 0, 0, 0};
+    }
+    const int lastWd = Weekday(Civil{year, month, dim, 0, 0, 0});
+    const int delta = PositiveMod(lastWd - wday, 7);
+    const int day = dim - delta + (ord + 1) * 7;
+    if (day < 1 || day > dim) return invalid;
+    return Civil{year, month, day, 0, 0, 0};
+}
+
+inline bool UntilExcludes(const RRule& rule, const Civil& wall, int64_t wallUtc) {
+    if (!rule.hasUntil) return false;
+    if (rule.untilIsDate) {
+        return PackDate(wall) > PackDate(rule.untilCivil);
+    }
+    if (rule.untilIsUtc) {
+        return wallUtc > rule.untilUtc;
+    }
+    return rule.untilCivil < wall;
+}
+
+inline std::vector<Civil> ObservanceOnsets(const Observance& obs, int year) {
+    std::vector<Civil> out;
+    if (!obs.hasRule || obs.rule.freq != Freq::Yearly) return out;
+    std::vector<int> months = obs.rule.bymonth;
+    if (months.empty()) months.push_back(obs.dtstart.month);
+    const ByDay bd = obs.rule.byday.empty() ? ByDay{0, -1} : obs.rule.byday[0];
+    for (int month : months) {
+        Civil onset;
+        if (bd.wday >= 0) {
+            const int ord = bd.ord == 0 ? 1 : bd.ord;
+            onset = NthWeekdayOfMonth(year, month, ord, bd.wday);
+            if (onset.year == 0) continue;
+        } else {
+            if (obs.dtstart.day > DaysInMonth(year, month)) continue;
+            onset = Civil{year, month, obs.dtstart.day, 0, 0, 0};
+        }
+        onset.hour = obs.dtstart.hour;
+        onset.minute = obs.dtstart.minute;
+        onset.second = obs.dtstart.second;
+        if (onset < obs.dtstart) continue;
+        const int64_t onsetUtc = WallToUnix(onset, obs.offsetFrom);
+        if (UntilExcludes(obs.rule, onset, onsetUtc)) continue;
+        out.push_back(onset);
+    }
+    return out;
+}
+
+inline int OffsetAt(const Zone& zone, const Civil& wall) {
+    int best = zone.initialOffset;
+    Civil bestOnset;
+    bestOnset.year = 0;
+    bool have = false;
+    auto consider = [&](const Civil& onset, int offsetTo) {
+        if (wall < onset) return;
+        if (!have || bestOnset <= onset) {
+            have = true;
+            bestOnset = onset;
+            best = offsetTo;
+        }
+    };
+    for (const Observance& obs : zone.observances) {
+        if (!obs.hasRule) {
+            consider(obs.dtstart, obs.offsetTo);
+            continue;
+        }
+        for (int year = wall.year - 1; year <= wall.year; ++year) {
+            for (const Civil& onset : ObservanceOnsets(obs, year)) {
+                consider(onset, obs.offsetTo);
+            }
+        }
+    }
+    return best;
+}
+
+struct Resolved {
+    bool allDay = false;
+    Civil civil{};
+    int64_t utc = 0;
+};
+
+inline Resolved ResolveWhen(const When& when, const std::map<std::string, Zone>& zones) {
+    Resolved r;
+    r.civil = when.civil;
+    r.allDay = when.dateOnly;
+    if (when.dateOnly) return r;
+    if (when.utc) {
+        r.utc = CivilToUnixUtc(when.civil);
+        return r;
+    }
+    if (!when.tzid.empty()) {
+        if (const Zone* zone = FindZone(zones, when.tzid)) {
+            r.utc = WallToUnix(when.civil, OffsetAt(*zone, when.civil));
+            return r;
+        }
+    }
+    // Floating, or a TZID whose VTIMEZONE was not in the feed: the clock time is
+    // already in the PC's local zone.
+    r.utc = CivilToUnixLocal(when.civil);
+    return r;
+}
+
+inline ParsedFeed ParseFeed(std::string_view ics) {
+    ParsedFeed feed;
+    const std::string text = Unfold(ics);
+    enum class Mode { Top, Event, Zone, ZoneObs };
+    Mode mode = Mode::Top;
+    int skipDepth = 0;
+    Event event;
+    Zone zone;
+    Observance obs;
+    bool haveObs = false;
+
+    auto finishObs = [&]() {
+        if (!haveObs) return;
+        zone.observances.push_back(std::move(obs));
+        obs = Observance{};
+        haveObs = false;
+    };
+    auto finishZone = [&]() {
+        finishObs();
+        if (!zone.tzid.empty()) {
+            Civil earliest;
+            earliest.year = 9999;
+            bool have = false;
+            for (const Observance& item : zone.observances) {
+                if (!have || item.dtstart < earliest) {
+                    earliest = item.dtstart;
+                    zone.initialOffset = item.offsetFrom;
+                    have = true;
+                }
+            }
+            feed.zones[zone.tzid] = std::move(zone);
+        }
+        zone = Zone{};
+    };
+    auto finishEvent = [&]() {
+        if (event.start.valid) feed.events.push_back(std::move(event));
+        event = Event{};
+    };
+
+    size_t lineStart = 0;
+    while (lineStart <= text.size()) {
+        size_t lineEnd = text.find('\n', lineStart);
+        if (lineEnd == std::string::npos) lineEnd = text.size();
+        std::string line = text.substr(lineStart, lineEnd - lineStart);
+        lineStart = lineEnd + 1;
+        if (line.empty()) {
+            if (lineEnd == text.size()) break;
+            continue;
+        }
+        Property prop = ParseProperty(line);
+        if (prop.name.empty()) {
+            if (lineEnd == text.size()) break;
+            continue;
+        }
+
+        if (prop.name == "BEGIN") {
+            const std::string kind = UpperCopy(prop.value);
+            if (mode == Mode::Top && kind == "VEVENT") {
+                mode = Mode::Event;
+                skipDepth = 0;
+                event = Event{};
+            } else if (mode == Mode::Top && kind == "VTIMEZONE") {
+                mode = Mode::Zone;
+                zone = Zone{};
+            } else if (mode == Mode::Zone && (kind == "STANDARD" || kind == "DAYLIGHT")) {
+                finishObs();
+                mode = Mode::ZoneObs;
+                obs = Observance{};
+                haveObs = true;
+            } else if (mode == Mode::Event) {
+                ++skipDepth;
+            } else if (mode == Mode::ZoneObs) {
+                ++skipDepth;
+            }
+        } else if (prop.name == "END") {
+            if (mode == Mode::Event) {
+                if (skipDepth > 0) {
+                    --skipDepth;
+                } else {
+                    finishEvent();
+                    mode = Mode::Top;
+                }
+            } else if (mode == Mode::ZoneObs) {
+                if (skipDepth > 0) {
+                    --skipDepth;
+                } else {
+                    finishObs();
+                    mode = Mode::Zone;
+                }
+            } else if (mode == Mode::Zone) {
+                finishZone();
+                mode = Mode::Top;
+            }
+        } else if (mode == Mode::Event && skipDepth == 0) {
+            if (prop.name == "SUMMARY") event.summary = UnescapeText(prop.value);
+            else if (prop.name == "LOCATION") event.location = UnescapeText(prop.value);
+            else if (prop.name == "STATUS") event.cancelled = EqualsIgnoreCase(prop.value, "CANCELLED");
+            else if (prop.name == "DTSTART") event.start = WhenFromProperty(prop);
+            else if (prop.name == "DTEND") {
+                event.end = WhenFromProperty(prop);
+                event.hasEnd = event.end.valid;
+            } else if (prop.name == "DURATION") {
+                event.durationSec = ParseDurationSeconds(prop.value);
+            } else if (prop.name == "RRULE") {
+                event.rule = ParseRRule(prop.value);
+            } else if (prop.name == "EXDATE") {
+                auto extra = ExdatesFromProperty(prop);
+                event.exdates.insert(event.exdates.end(), extra.begin(), extra.end());
+            } else if (prop.name == "RECURRENCE-ID") {
+                event.recurrenceId = WhenFromProperty(prop);
+                event.hasRecurrenceId = event.recurrenceId.valid;
+            }
+        } else if (mode == Mode::Zone) {
+            if (prop.name == "TZID") {
+                std::string id = prop.value;
+                if (id.size() >= 2 && id.front() == '"' && id.back() == '"') id = id.substr(1, id.size() - 2);
+                zone.tzid = id;
+            }
+        } else if (mode == Mode::ZoneObs && skipDepth == 0 && haveObs) {
+            if (prop.name == "TZOFFSETFROM") obs.offsetFrom = ParseUtcOffset(prop.value);
+            else if (prop.name == "TZOFFSETTO") obs.offsetTo = ParseUtcOffset(prop.value);
+            else if (prop.name == "DTSTART") {
+                When w = WhenFromProperty(prop);
+                if (w.valid) obs.dtstart = w.civil;
+            } else if (prop.name == "RRULE") {
+                obs.rule = ParseRRule(prop.value);
+                obs.hasRule = obs.rule.freq != Freq::None;
+            }
+        }
+        if (lineEnd == text.size()) break;
+    }
+    if (mode == Mode::Event) finishEvent();
+    if (mode == Mode::Zone || mode == Mode::ZoneObs) finishZone();
+    return feed;
+}
+
+inline void SetSpanFromUtc(Occurrence& occ) {
+    const Civil local = UnixUtcToLocal(occ.startUtc);
+    occ.year = local.year;
+    occ.month = local.month;
+    occ.day = local.day;
+    occ.hour = local.hour;
+    occ.minute = local.minute;
+    occ.second = local.second;
+    occ.spanYear = local.year;
+    occ.spanMonth = local.month;
+    occ.spanDay = local.day;
+    Civil endLocal = local;
+    if (occ.endUtc > occ.startUtc) endLocal = UnixUtcToLocal(occ.endUtc);
+    if (occ.endUtc <= occ.startUtc) {
+        const Civil next = AddDays(local, 1);
+        occ.spanEndYear = next.year;
+        occ.spanEndMonth = next.month;
+        occ.spanEndDay = next.day;
+    } else if (endLocal.hour == 0 && endLocal.minute == 0 && endLocal.second == 0) {
+        occ.spanEndYear = endLocal.year;
+        occ.spanEndMonth = endLocal.month;
+        occ.spanEndDay = endLocal.day;
+    } else {
+        const Civil next = AddDays(endLocal, 1);
+        occ.spanEndYear = next.year;
+        occ.spanEndMonth = next.month;
+        occ.spanEndDay = next.day;
+    }
+}
+
+inline Occurrence MakeAllDay(const Event& ev, const Civil& start, int days) {
+    Occurrence occ;
+    occ.summary = ev.summary.empty() ? "(No title)" : ev.summary;
+    occ.location = ev.location;
+    occ.allDay = true;
+    if (days < 1) days = 1;
+    occ.year = start.year;
+    occ.month = start.month;
+    occ.day = start.day;
+    occ.spanYear = start.year;
+    occ.spanMonth = start.month;
+    occ.spanDay = start.day;
+    const Civil end = AddDays(Civil{start.year, start.month, start.day, 0, 0, 0}, days);
+    occ.spanEndYear = end.year;
+    occ.spanEndMonth = end.month;
+    occ.spanEndDay = end.day;
+    occ.startUtc = CivilToUnixLocal(Civil{start.year, start.month, start.day, 0, 0, 0});
+    occ.endUtc = CivilToUnixLocal(end);
+    return occ;
+}
+
+inline Occurrence MakeTimed(const Event& ev, int64_t startUtc, int64_t durationSec) {
+    Occurrence occ;
+    occ.summary = ev.summary.empty() ? "(No title)" : ev.summary;
+    occ.location = ev.location;
+    occ.allDay = false;
+    occ.startUtc = startUtc;
+    occ.endUtc = startUtc + (durationSec > 0 ? durationSec : 0);
+    SetSpanFromUtc(occ);
+    return occ;
+}
+
+inline bool DatesOverlap(int sY, int sM, int sD, int eY, int eM, int eD, const ExpandWindow& w) {
+    const int s = PackDate(sY, sM, sD);
+    const int e = PackDate(eY, eM, eD);
+    const int ws = PackDate(w.fromYear, w.fromMonth, w.fromDay);
+    const int we = PackDate(w.toYear, w.toMonth, w.toDay);
+    return s < we && e > ws;
+}
+
+inline bool InstantsOverlap(int64_t startUtc, int64_t endUtc, const ExpandWindow& w) {
+    if (endUtc <= startUtc) endUtc = startUtc + 1;
+    return startUtc < w.endUtc && endUtc > w.startUtc;
+}
+
+inline int AllDayLengthOf(const Event& ev, const std::map<std::string, Zone>& zones) {
+    (void)zones;
+    if (!ev.start.dateOnly) return 1;
+    if (ev.durationSec >= 86400) return std::max(1, ev.durationSec / 86400);
+    if (!ev.hasEnd || !ev.end.dateOnly) return 1;
+    const int days = DaysFromCivil(ev.end.civil.year, ev.end.civil.month, ev.end.civil.day) -
+                     DaysFromCivil(ev.start.civil.year, ev.start.civil.month, ev.start.civil.day);
+    return std::max(1, days);
+}
+
+inline int64_t TimedDurationOf(const Event& ev, const std::map<std::string, Zone>& zones) {
+    if (ev.start.dateOnly) return 0;
+    if (ev.hasEnd && !ev.end.dateOnly) {
+        const int64_t delta = ResolveWhen(ev.end, zones).utc - ResolveWhen(ev.start, zones).utc;
+        if (delta > 0) return delta;
+    }
+    if (ev.durationSec > 0) return ev.durationSec;
+    return 0;
+}
+
+inline std::vector<Civil> MonthDays(int year, int month, const RRule& rule, const Civil& seed) {
+    std::vector<Civil> days;
+    const auto push = [&](Civil c) {
+        if (c.year == 0) return;
+        c.hour = seed.hour;
+        c.minute = seed.minute;
+        c.second = seed.second;
+        days.push_back(c);
+    };
+    if (!rule.byday.empty()) {
+        for (const ByDay& bd : rule.byday) {
+            if (bd.wday < 0) continue;
+            if (bd.ord == 0) {
+                for (int day = 1; day <= DaysInMonth(year, month); ++day) {
+                    Civil c{year, month, day, 0, 0, 0};
+                    if (Weekday(c) == bd.wday) push(c);
+                }
+            } else {
+                push(NthWeekdayOfMonth(year, month, bd.ord, bd.wday));
+            }
+        }
+    } else if (!rule.bymonthday.empty()) {
+        for (int dom : rule.bymonthday) {
+            int day = dom;
+            if (dom < 0) day = DaysInMonth(year, month) + dom + 1;
+            if (day >= 1 && day <= DaysInMonth(year, month)) push(Civil{year, month, day, 0, 0, 0});
+        }
+    } else if (seed.day >= 1 && seed.day <= DaysInMonth(year, month)) {
+        push(Civil{year, month, seed.day, 0, 0, 0});
+    }
+    std::sort(days.begin(), days.end());
+    days.erase(std::unique(days.begin(), days.end(), [](const Civil& a, const Civil& b) {
+                   return a.year == b.year && a.month == b.month && a.day == b.day &&
+                          a.hour == b.hour && a.minute == b.minute && a.second == b.second;
+               }),
+               days.end());
+    return days;
+}
+
+inline void ExpandEvent(const Event& ev, const ParsedFeed& feed, const std::set<int64_t>& skipUtc,
+                        const std::set<int>& skipDate, const ExpandWindow& window,
+                        std::vector<Occurrence>& out) {
+    if (!ev.start.valid || ev.cancelled) return;
+
+    const bool allDay = ev.start.dateOnly;
+    const int dayLength = allDay ? AllDayLengthOf(ev, feed.zones) : 1;
+    const int64_t duration = allDay ? 0 : TimedDurationOf(ev, feed.zones);
+    const RRule& rule = ev.rule;
+
+    auto wallUtc = [&](const Civil& wall) {
+        When when = ev.start;
+        when.civil = wall;
+        when.dateOnly = false;
+        when.valid = true;
+        return ResolveWhen(when, feed.zones).utc;
+    };
+
+    int emitted = 0;
+    bool stopped = false;
+    auto consider = [&](const Civil& wall) {
+        if (stopped) return;
+        if (allDay) {
+            const int64_t asUtc = rule.untilIsUtc ? CivilToUnixUtc(Civil{wall.year, wall.month, wall.day, 0, 0, 0})
+                                                  : 0;
+            if (rule.hasUntil && UntilExcludes(rule, wall, asUtc)) {
+                stopped = true;
+                return;
+            }
+        } else {
+            const int64_t utc = wallUtc(wall);
+            if (rule.hasUntil && UntilExcludes(rule, wall, utc)) {
+                stopped = true;
+                return;
+            }
+        }
+        if (rule.count > 0 && emitted >= rule.count) {
+            stopped = true;
+            return;
+        }
+        ++emitted;
+
+        bool excluded = false;
+        if (allDay) {
+            excluded = skipDate.count(PackDate(wall)) > 0;
+        } else {
+            const int64_t utc = wallUtc(wall);
+            excluded = skipUtc.count(utc) > 0 || skipDate.count(PackDate(wall)) > 0;
+            if (!excluded && InstantsOverlap(utc, utc + duration, window)) {
+                out.push_back(MakeTimed(ev, utc, duration));
+            }
+            if (rule.count == 0 && !rule.hasUntil && utc >= window.endUtc) stopped = true;
+            if (emitted > 8000) stopped = true;
+            return;
+        }
+
+        if (!excluded) {
+            Occurrence occ = MakeAllDay(ev, wall, dayLength);
+            if (DatesOverlap(occ.spanYear, occ.spanMonth, occ.spanDay, occ.spanEndYear, occ.spanEndMonth,
+                             occ.spanEndDay, window)) {
+                out.push_back(std::move(occ));
+            }
+        }
+        if (rule.count == 0 && !rule.hasUntil &&
+            PackDate(wall) >= PackDate(window.toYear, window.toMonth, window.toDay)) {
+            stopped = true;
+        }
+        if (emitted > 8000) stopped = true;
+    };
+
+    if (rule.freq == Freq::None) {
+        // A single instance still has to honour COUNT/UNTIL, which are meaningless here.
+        RRule once = rule;
+        once.count = 0;
+        once.hasUntil = false;
+        (void)once;
+        consider(ev.start.civil);
+        return;
+    }
+
+    const Civil seed = ev.start.civil;
+    if (rule.freq == Freq::Daily) {
+        for (int i = 0; i < 10000 && !stopped; ++i) {
+            consider(AddDays(seed, i * rule.interval));
+        }
+        return;
+    }
+
+    if (rule.freq == Freq::Weekly) {
+        const int seedDays = DaysFromCivil(seed.year, seed.month, seed.day);
+        const int seedWd = Weekday(seed);
+        const int week0 = seedDays - PositiveMod(seedWd - rule.wkst, 7);
+        std::vector<int> days;
+        if (rule.byday.empty()) {
+            days.push_back(seedWd);
+        } else {
+            for (const ByDay& bd : rule.byday) {
+                if (bd.wday >= 0) days.push_back(bd.wday);
+            }
+        }
+        std::sort(days.begin(), days.end(), [&](int a, int b) {
+            return PositiveMod(a - rule.wkst, 7) < PositiveMod(b - rule.wkst, 7);
+        });
+        days.erase(std::unique(days.begin(), days.end()), days.end());
+        for (int week = 0; week < 800 && !stopped; ++week) {
+            const int weekStart = week0 + week * rule.interval * 7;
+            for (int wd : days) {
+                if (stopped) break;
+                const int dayNum = weekStart + PositiveMod(wd - rule.wkst, 7);
+                if (dayNum < seedDays) continue;
+                Civil cand = CivilFromDays(dayNum);
+                cand.hour = seed.hour;
+                cand.minute = seed.minute;
+                cand.second = seed.second;
+                consider(cand);
+            }
+        }
+        return;
+    }
+
+    if (rule.freq == Freq::Monthly || rule.freq == Freq::Yearly) {
+        if (rule.freq == Freq::Monthly) {
+            const int startIndex = seed.year * 12 + (seed.month - 1);
+            for (int step = 0; step < 600 && !stopped; ++step) {
+                const int idx = startIndex + step * rule.interval;
+                const int year = idx / 12;
+                const int month = idx % 12 + 1;
+                for (const Civil& cand : MonthDays(year, month, rule, seed)) {
+                    if (stopped) break;
+                    if (cand < seed) continue;
+                    consider(cand);
+                }
+            }
+            return;
+        }
+        std::vector<int> months = rule.bymonth;
+        if (months.empty()) months.push_back(seed.month);
+        std::sort(months.begin(), months.end());
+        for (int step = 0; step < 200 && !stopped; ++step) {
+            const int year = seed.year + step * rule.interval;
+            for (int month : months) {
+                RRule monthRule = rule;
+                // Yearly BYMONTH selects the month; the day comes from BYDAY / BYMONTHDAY / DTSTART.
+                monthRule.bymonth.clear();
+                for (const Civil& cand : MonthDays(year, month, monthRule, seed)) {
+                    if (stopped) break;
+                    if (cand < seed) continue;
+                    consider(cand);
+                }
+            }
+        }
+    }
+}
+
+inline void AppendSingle(const Event& ev, const ParsedFeed& feed, const ExpandWindow& window,
+                         std::vector<Occurrence>& out) {
+    if (!ev.start.valid || ev.cancelled) return;
+    if (ev.start.dateOnly) {
+        const int days = AllDayLengthOf(ev, feed.zones);
+        Occurrence occ = MakeAllDay(ev, ev.start.civil, days);
+        if (DatesOverlap(occ.spanYear, occ.spanMonth, occ.spanDay, occ.spanEndYear, occ.spanEndMonth,
+                         occ.spanEndDay, window)) {
+            out.push_back(std::move(occ));
+        }
+        return;
+    }
+    const int64_t start = ResolveWhen(ev.start, feed.zones).utc;
+    const int64_t duration = TimedDurationOf(ev, feed.zones);
+    if (InstantsOverlap(start, start + duration, window)) {
+        out.push_back(MakeTimed(ev, start, duration));
+    }
+}
+
+inline std::vector<Occurrence> ExpandCalendar(std::string_view ics, const ExpandWindow& window) {
+    std::vector<Occurrence> out;
+    if (ics.empty() || window.endUtc <= window.startUtc) return out;
+    const ParsedFeed feed = ParseFeed(ics);
+
+    std::set<int64_t> skipUtc;
+    std::set<int> skipDate;
+    auto addSkip = [&](const When& when) {
+        if (!when.valid) return;
+        if (when.dateOnly) {
+            skipDate.insert(PackDate(when.civil));
+            return;
+        }
+        skipUtc.insert(ResolveWhen(when, feed.zones).utc);
+    };
+
+    // RECURRENCE-ID names the original instance a separate VEVENT replaces.
+    // EXDATE stays per event so one calendar cannot cancel another's instance.
+    for (const Event& ev : feed.events) {
+        if (ev.hasRecurrenceId) addSkip(ev.recurrenceId);
+    }
+    for (const Event& ev : feed.events) {
+        if (ev.hasRecurrenceId) {
+            if (!ev.cancelled) AppendSingle(ev, feed, window, out);
+            continue;
+        }
+        std::set<int64_t> eventSkipUtc = skipUtc;
+        std::set<int> eventSkipDate = skipDate;
+        for (const When& ex : ev.exdates) {
+            if (!ex.valid) continue;
+            if (ex.dateOnly) eventSkipDate.insert(PackDate(ex.civil));
+            else eventSkipUtc.insert(ResolveWhen(ex, feed.zones).utc);
+        }
+        ExpandEvent(ev, feed, eventSkipUtc, eventSkipDate, window, out);
+    }
+
+    std::sort(out.begin(), out.end(), [](const Occurrence& a, const Occurrence& b) {
+        if (a.startUtc != b.startUtc) return a.startUtc < b.startUtc;
+        if (a.allDay != b.allDay) return a.allDay && !b.allDay;
+        return a.summary < b.summary;
+    });
+    if (out.size() > 2000) out.resize(2000);
+    return out;
+}
+
+inline std::string HeadsUpLabel(const std::vector<Occurrence>& events, int64_t nowUtc, int windowMinutes) {
+    if (windowMinutes < 1) windowMinutes = 1;
+    const int64_t windowSec = static_cast<int64_t>(windowMinutes) * 60;
+    const Occurrence* best = nullptr;
+    int64_t bestDelta = 0;
+    for (const Occurrence& ev : events) {
+        if (ev.allDay) continue;
+        const int64_t delta = ev.startUtc - nowUtc;
+        if (delta < -30 || delta > windowSec) continue;
+        if (!best || delta < bestDelta) {
+            best = &ev;
+            bestDelta = delta;
+        }
+    }
+    if (!best || best->summary.empty()) return {};
+    std::string title = best->summary;
+    for (char& ch : title) {
+        if (ch == '\n' || ch == '\r') ch = ' ';
+    }
+    if (bestDelta <= 30) return title + " now";
+    int mins = static_cast<int>((bestDelta + 30) / 60);
+    if (mins < 1) mins = 1;
+    return title + " in " + std::to_string(mins) + " min";
+}
+
+}  // namespace di_ics
+// DI_ICS_ENGINE_END
 
 namespace {
 
@@ -1273,6 +2604,12 @@ struct Settings {
     bool weather = true;
     std::wstring weatherCity;
     bool weatherFahrenheit = false;
+    // Google Calendar via one or more private iCal URLs. Empty URLs leave the
+    // month grid exactly as it was.
+    std::wstring gcalIcsUrls;
+    int gcalRefreshMinutes = 15;
+    bool gcalHeadsUp = true;
+    int gcalHeadsUpMinutes = 10;
     bool lyrics = false;
     bool lyricsVisualizer = true;
     bool karaokeLyrics = true;
@@ -1682,6 +3019,32 @@ enum class SongIdStatus {
     Error,
 };
 
+// One expanded calendar occurrence, already converted to the PC's local time.
+// Held behind a shared_ptr so copying SharedState each frame does not copy the list.
+struct GcalEvent {
+    std::wstring summary;
+    std::wstring location;
+    bool allDay = false;
+    int64_t startUtc = 0;
+    int64_t endUtc = 0;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int hour = 0;
+    int minute = 0;
+    int spanYear = 0;
+    int spanMonth = 0;
+    int spanDay = 0;
+    int spanEndYear = 0;  // exclusive
+    int spanEndMonth = 0;
+    int spanEndDay = 0;
+};
+
+struct GcalSnapshot {
+    bool loaded = false;
+    std::vector<GcalEvent> events;  // sorted by start
+};
+
 struct SongIdSnapshot {
     bool active = false;
     SongIdStatus status = SongIdStatus::Listening;
@@ -1714,6 +3077,7 @@ struct SharedState {
     ProgressSnapshot progress;
     SystemSnapshot system;
     WeatherSnapshot weather;
+    std::shared_ptr<const GcalSnapshot> gcal;
     LyricsSnapshot lyrics;
     LookupSnapshot lookup;
     std::vector<LookupRecent> lookupRecent;  // newest first, guarded by g_stateMutex
@@ -1786,6 +3150,8 @@ HANDLE g_renderThread = nullptr;
 HANDLE g_mediaThread = nullptr;
 HANDLE g_audioThread = nullptr;
 HANDLE g_weatherThread = nullptr;
+HANDLE g_gcalThread = nullptr;
+HANDLE g_gcalWakeEvent = nullptr;
 HANDLE g_lyricsThread = nullptr;
 HANDLE g_notificationThread = nullptr;
 HANDLE g_bluetoothThread = nullptr;
@@ -3377,6 +4743,16 @@ void LoadSettings() {
     next.weather = Wh_GetIntSetting(L"Modules.Weather") != 0;
     next.weatherCity = GetStringSettingWithFallback(L"Modules.WeatherCity", L"Weather.WeatherCity", L"CalendarWeather.WeatherCity");
     next.weatherFahrenheit = Wh_GetIntSetting(L"Modules.WeatherFahrenheit") != 0;
+    next.gcalIcsUrls = GetStringSettingCopy(L"GoogleCalendar.IcsUrls");
+    {
+        int refresh = Wh_GetIntSetting(L"GoogleCalendar.RefreshMinutes");
+        if (refresh <= 0) refresh = 15;
+        next.gcalRefreshMinutes = ClampInt(refresh, 1, 24 * 60);
+        int lead = Wh_GetIntSetting(L"GoogleCalendar.HeadsUpMinutes");
+        if (lead <= 0) lead = 10;
+        next.gcalHeadsUpMinutes = ClampInt(lead, 1, 180);
+        next.gcalHeadsUp = Wh_GetIntSetting(L"GoogleCalendar.HeadsUp") != 0;
+    }
     next.lyrics = Wh_GetIntSetting(L"Modules.Lyrics") != 0;
     next.lyricsVisualizer = Wh_GetIntSetting(L"Modules.LyricsVisualizer") != 0;
     next.karaokeLyrics = Wh_GetIntSetting(L"Modules.KaraokeLyrics") != 0;
@@ -3661,12 +5037,15 @@ void LoadSettings() {
     // this, both could read the same "old" values and each decide a hotkey
     // re-registration was needed, or neither would.
     bool cityChanged = false;
+    bool gcalChanged = false;
     bool hotkeySettingChanged = false;
     bool backdropChanged = false;
     bool capsLockChanged = false;
     {
         std::lock_guard lock(g_settingsMutex);
         cityChanged = next.weatherCity != g_settings.weatherCity;
+        gcalChanged = next.gcalIcsUrls != g_settings.gcalIcsUrls ||
+                      next.gcalRefreshMinutes != g_settings.gcalRefreshMinutes;
         capsLockChanged = next.capsLock != g_settings.capsLock;
         hotkeySettingChanged =
             next.hideShowHotkeyEnabled != g_settings.hideShowHotkeyEnabled ||
@@ -3688,6 +5067,9 @@ void LoadSettings() {
     g_layoutDirty = true;
     if (cityChanged && g_settingsChangedEvent) {
         SetEvent(g_settingsChangedEvent);
+    }
+    if (gcalChanged && g_gcalWakeEvent) {
+        SetEvent(g_gcalWakeEvent);
     }
     // Installs or removes WH_KEYBOARD_LL to match. The keyboard thread would pick
     // this up on its next backstop tick anyway; this just makes it immediate.
@@ -7301,6 +8683,297 @@ DWORD WINAPI WeatherThreadProc(void*) {
     }
     return 0;
 }
+
+// ── Google Calendar (private iCal) ───────────────────────────────────────────
+// Fetched on a background thread. A bad URL or a dropped connection leaves the
+// last successful snapshot in place and never touches the render thread.
+
+std::wstring Utf8ToWideFlat(std::string_view text) {
+    if (text.empty()) return {};
+    std::string flat;
+    flat.reserve(std::min(text.size(), static_cast<size_t>(4096)));
+    for (size_t i = 0; i < text.size() && flat.size() < 4096; ++i) {
+        char ch = text[i];
+        if (ch == '\n' || ch == '\r' || ch == '\t') ch = ' ';
+        flat.push_back(ch);
+    }
+    const int chars = MultiByteToWideChar(CP_UTF8, 0, flat.data(), static_cast<int>(flat.size()), nullptr, 0);
+    if (chars <= 0) return {};
+    std::wstring out(static_cast<size_t>(chars), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, flat.data(), static_cast<int>(flat.size()), out.data(), chars);
+    return out;
+}
+
+std::vector<std::wstring> SplitIcsUrls(const std::wstring& raw) {
+    std::vector<std::wstring> urls;
+    std::wstring cur;
+    auto flush = [&]() {
+        const size_t begin = cur.find_first_not_of(L" \t\r\n\"'");
+        if (begin == std::wstring::npos) {
+            cur.clear();
+            return;
+        }
+        const size_t end = cur.find_last_not_of(L" \t\r\n\"'");
+        std::wstring url = cur.substr(begin, end - begin + 1);
+        cur.clear();
+        if (url.size() >= 8) urls.push_back(std::move(url));
+    };
+    for (wchar_t ch : raw) {
+        if (ch == L',' || ch == L'\n' || ch == L'\r') flush();
+        else cur.push_back(ch);
+    }
+    flush();
+    return urls;
+}
+
+bool GcalCoversDay(const GcalSnapshot* snap, int year, int month, int day) {
+    if (!snap) return false;
+    const int cur = year * 10000 + month * 100 + day;
+    for (const GcalEvent& ev : snap->events) {
+        const int start = ev.spanYear * 10000 + ev.spanMonth * 100 + ev.spanDay;
+        const int end = ev.spanEndYear * 10000 + ev.spanEndMonth * 100 + ev.spanEndDay;
+        if (cur >= start && cur < end) return true;
+    }
+    return false;
+}
+
+void GcalUpcoming(const GcalSnapshot& snap, int limit, std::vector<const GcalEvent*>& out) {
+    out.clear();
+    if (limit < 1) return;
+    const int64_t now = di_ics::UnixNow();
+    const di_ics::Civil today = di_ics::UnixUtcToLocal(now);
+    const di_ics::Civil horizon = di_ics::AddDays(di_ics::Civil{today.year, today.month, today.day, 0, 0, 0}, 21);
+    const int todayPack = today.year * 10000 + today.month * 100 + today.day;
+    for (const GcalEvent& ev : snap.events) {
+        if (ev.allDay) {
+            const int endPack = ev.spanEndYear * 10000 + ev.spanEndMonth * 100 + ev.spanEndDay;
+            if (endPack <= todayPack) continue;
+            if (horizon < di_ics::Civil{ev.spanYear, ev.spanMonth, ev.spanDay, 0, 0, 0}) continue;
+        } else if (ev.endUtc <= now || ev.startUtc > now + 21LL * 86400LL) {
+            continue;
+        }
+        out.push_back(&ev);
+        if (static_cast<int>(out.size()) >= limit) break;
+    }
+}
+
+// Same rule as di_ics::HeadsUpLabel, applied to the already-decoded snapshot so
+// the render thread does not re-encode every event on every frame.
+std::wstring GcalHeadsUpText(const SharedState& state, const Settings& settings) {
+    if (!settings.gcalHeadsUp || !state.gcal || !state.gcal->loaded) return {};
+    const int windowMin = settings.gcalHeadsUpMinutes < 1 ? 1 : settings.gcalHeadsUpMinutes;
+    const int64_t now = di_ics::UnixNow();
+    const int64_t windowSec = static_cast<int64_t>(windowMin) * 60;
+    const GcalEvent* best = nullptr;
+    int64_t bestDelta = 0;
+    for (const GcalEvent& ev : state.gcal->events) {
+        if (ev.allDay || ev.summary.empty()) continue;
+        const int64_t delta = ev.startUtc - now;
+        if (delta < -30 || delta > windowSec) continue;
+        if (!best || delta < bestDelta) {
+            best = &ev;
+            bestDelta = delta;
+        }
+    }
+    if (!best) return {};
+    if (bestDelta <= 30) return best->summary + L" now";
+    int mins = static_cast<int>((bestDelta + 30) / 60);
+    if (mins < 1) mins = 1;
+    return best->summary + L" in " + std::to_wstring(mins) + L" min";
+}
+
+// Quiet on purpose: a wrong secret URL or an offline PC returns an empty body
+// and the caller keeps the previous copy. The URL itself is never logged.
+std::string HttpGetAbsoluteUrl(const std::wstring& url) {
+    if (url.size() < 8 || url.size() > 4096) return {};
+    URL_COMPONENTS parts{};
+    parts.dwStructSize = sizeof(parts);
+    parts.dwSchemeLength = static_cast<DWORD>(-1);
+    parts.dwHostNameLength = static_cast<DWORD>(-1);
+    parts.dwUrlPathLength = static_cast<DWORD>(-1);
+    parts.dwExtraInfoLength = static_cast<DWORD>(-1);
+    if (!WinHttpCrackUrl(url.c_str(), static_cast<DWORD>(url.size()), 0, &parts)) return {};
+    if (parts.nScheme != INTERNET_SCHEME_HTTPS && parts.nScheme != INTERNET_SCHEME_HTTP) return {};
+    if (!parts.lpszHostName || parts.dwHostNameLength == 0) return {};
+
+    const std::wstring host(parts.lpszHostName, parts.dwHostNameLength);
+    std::wstring path = (parts.lpszUrlPath && parts.dwUrlPathLength)
+                            ? std::wstring(parts.lpszUrlPath, parts.dwUrlPathLength)
+                            : L"/";
+    if (parts.lpszExtraInfo && parts.dwExtraInfoLength) {
+        path.append(parts.lpszExtraInfo, parts.dwExtraInfoLength);
+    }
+    const bool https = parts.nScheme == INTERNET_SCHEME_HTTPS;
+    INTERNET_PORT port = parts.nPort;
+    if (port == 0) port = https ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
+
+    std::string body;
+    HINTERNET session = WinHttpOpen(L"DynamicIsland/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                                    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+    if (!session) return {};
+    WinHttpSetTimeouts(session, 8000, 8000, 15000, 20000);
+
+    HINTERNET connect = WinHttpConnect(session, host.c_str(), port, 0);
+    if (connect) {
+        HINTERNET request = WinHttpOpenRequest(connect, L"GET", path.c_str(), nullptr, WINHTTP_NO_REFERER,
+                                               WINHTTP_DEFAULT_ACCEPT_TYPES,
+                                               https ? WINHTTP_FLAG_SECURE : 0);
+        if (request) {
+            DWORD policy = WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS;
+            WinHttpSetOption(request, WINHTTP_OPTION_REDIRECT_POLICY, &policy, sizeof(policy));
+            if (WinHttpSendRequest(request, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
+                WinHttpReceiveResponse(request, nullptr)) {
+                DWORD status = 0;
+                DWORD statusSize = sizeof(status);
+                if (WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                        WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize,
+                                        WINHTTP_NO_HEADER_INDEX) &&
+                    status == 200) {
+                    bool ok = true;
+                    for (;;) {
+                        DWORD size = 0;
+                        if (!WinHttpQueryDataAvailable(request, &size)) {
+                            ok = false;
+                            break;
+                        }
+                        if (size == 0) break;
+                        std::vector<char> buf(size);
+                        DWORD got = 0;
+                        if (!WinHttpReadData(request, buf.data(), size, &got)) {
+                            ok = false;
+                            break;
+                        }
+                        if (got == 0) break;
+                        body.append(buf.data(), got);
+                        if (body.size() > 8u * 1024u * 1024u) {
+                            ok = false;
+                            break;
+                        }
+                    }
+                    if (!ok) body.clear();
+                }
+            }
+            WinHttpCloseHandle(request);
+        }
+        WinHttpCloseHandle(connect);
+    }
+    WinHttpCloseHandle(session);
+    if (body.find("BEGIN:VCALENDAR") == std::string::npos && body.find("BEGIN:VEVENT") == std::string::npos) {
+        return {};
+    }
+    return body;
+}
+
+void PublishGcalSnapshot(const std::vector<std::pair<std::wstring, std::string>>& feeds) {
+    if (feeds.empty()) {
+        std::lock_guard lock(g_stateMutex);
+        g_state.gcal.reset();
+        return;
+    }
+    auto snap = std::make_shared<GcalSnapshot>();
+    const di_ics::ExpandWindow window = di_ics::WindowCoveringLocal(di_ics::UnixNow(), 70);
+    for (const auto& feed : feeds) {
+        for (const di_ics::Occurrence& occ : di_ics::ExpandCalendar(feed.second, window)) {
+            GcalEvent ev;
+            ev.summary = Utf8ToWideFlat(occ.summary);
+            ev.location = Utf8ToWideFlat(occ.location);
+            ev.allDay = occ.allDay;
+            ev.startUtc = occ.startUtc;
+            ev.endUtc = occ.endUtc;
+            ev.year = occ.year;
+            ev.month = occ.month;
+            ev.day = occ.day;
+            ev.hour = occ.hour;
+            ev.minute = occ.minute;
+            ev.spanYear = occ.spanYear;
+            ev.spanMonth = occ.spanMonth;
+            ev.spanDay = occ.spanDay;
+            ev.spanEndYear = occ.spanEndYear;
+            ev.spanEndMonth = occ.spanEndMonth;
+            ev.spanEndDay = occ.spanEndDay;
+            snap->events.push_back(std::move(ev));
+        }
+    }
+    std::sort(snap->events.begin(), snap->events.end(), [](const GcalEvent& a, const GcalEvent& b) {
+        if (a.startUtc != b.startUtc) return a.startUtc < b.startUtc;
+        if (a.allDay != b.allDay) return a.allDay && !b.allDay;
+        return a.summary < b.summary;
+    });
+    if (snap->events.size() > 2000) snap->events.resize(2000);
+    snap->loaded = true;
+    {
+        std::lock_guard lock(g_stateMutex);
+        g_state.gcal = std::move(snap);
+    }
+}
+
+DWORD WINAPI GcalThreadProc(void*) {
+    HANDLE wakes[] = {g_stopEvent, g_gcalWakeEvent};
+    if (!g_stopEvent || !g_gcalWakeEvent) return 0;
+    if (WaitForMultipleObjects(2, wakes, FALSE, 2000) == WAIT_OBJECT_0) return 0;
+
+    // url -> last body that parsed as a calendar. A failed refresh keeps it.
+    std::vector<std::pair<std::wstring, std::string>> cache;
+
+    while (WaitForSingleObject(g_stopEvent, 0) == WAIT_TIMEOUT) {
+        std::wstring raw;
+        int refreshMin = 15;
+        {
+            std::lock_guard lock(g_settingsMutex);
+            raw = g_settings.gcalIcsUrls;
+            refreshMin = g_settings.gcalRefreshMinutes;
+        }
+        const std::vector<std::wstring> urls = SplitIcsUrls(raw);
+        if (urls.empty()) {
+            cache.clear();
+            {
+                std::lock_guard lock(g_stateMutex);
+                g_state.gcal.reset();
+            }
+            if (WaitForMultipleObjects(2, wakes, FALSE, 5000) == WAIT_OBJECT_0) break;
+            continue;
+        }
+
+        cache.erase(std::remove_if(cache.begin(), cache.end(), [&](const auto& item) {
+                        return std::find(urls.begin(), urls.end(), item.first) == urls.end();
+                    }),
+                    cache.end());
+
+        bool anyFresh = false;
+        for (const std::wstring& url : urls) {
+            if (WaitForSingleObject(g_stopEvent, 0) != WAIT_TIMEOUT) break;
+            const std::string body = HttpGetAbsoluteUrl(url);
+            if (body.empty()) continue;
+            anyFresh = true;
+            bool replaced = false;
+            for (auto& item : cache) {
+                if (item.first == url) {
+                    item.second = body;
+                    replaced = true;
+                    break;
+                }
+            }
+            if (!replaced) cache.emplace_back(url, body);
+        }
+
+        if (!cache.empty()) {
+            PublishGcalSnapshot(cache);
+        } else {
+            // Every configured URL was dropped or has never loaded. Don't keep
+            // showing a calendar the settings no longer point at.
+            std::lock_guard lock(g_stateMutex);
+            g_state.gcal.reset();
+        }
+
+        DWORD waitMs = static_cast<DWORD>(std::max(1, refreshMin)) * 60u * 1000u;
+        if (!anyFresh && cache.empty()) {
+            waitMs = 2u * 60u * 1000u;
+        }
+        if (WaitForMultipleObjects(2, wakes, FALSE, waitMs) == WAIT_OBJECT_0) break;
+    }
+    return 0;
+}
+
 
 // ── Lyrics (LRCLIB, https://lrclib.net) ──────────────────────────────────────
 // User-Agent sent to LRCLIB.
@@ -12898,6 +14571,9 @@ struct IdleStripMetrics {
     float weatherWidth = 0.0f;
     bool hasWeather = false;
     bool hasPrivacy = false;
+    bool hasHeadsUp = false;
+    float headsUpWidth = 0.0f;
+    std::wstring headsUpText;
     float totalWidth = IdleStripLayout::kMinWidth;
 };
 
@@ -13297,12 +14973,35 @@ class Renderer {
                 MeasureTextWidthCached(WidestDigitForm(label), fmt, idleWeatherWidthCache_);
         }
 
+        // An imminent event replaces the weather slot rather than growing a third
+        // one, so the pill stays a pill and lyrics/media (a different activity)
+        // are left alone.
+        metrics.headsUpText = GcalHeadsUpText(state, settings);
+        if (!metrics.headsUpText.empty()) {
+            const bool privacySoon =
+                (state.system.micActive && settings.privacyDots && settings.privacyDotsMic) ||
+                (state.system.cameraActive && settings.privacyDots && settings.privacyDotsCam);
+            float chrome = IdleStripLayout::kPadX * 2.0f + metrics.clockWidth +
+                           IdleStripLayout::kSlotGap * 2.0f + IdleStripLayout::kDividerWidth;
+            if (privacySoon) chrome += IdleStripLayout::kPrivacyReserve;
+            metrics.headsUpText = TruncateHeadsUp(metrics.headsUpText, fmt,
+                                                  IdleStripLayout::kMaxWidth - chrome);
+        }
+        if (!metrics.headsUpText.empty()) {
+            metrics.hasHeadsUp = true;
+            metrics.headsUpWidth = MeasureTextWidth(metrics.headsUpText, fmt);
+            metrics.hasWeather = false;
+        }
+
         metrics.hasPrivacy =
             (state.system.micActive && settings.privacyDots && settings.privacyDotsMic) ||
             (state.system.cameraActive && settings.privacyDots && settings.privacyDotsCam);
 
         float total = IdleStripLayout::kPadX * 2.0f + metrics.clockWidth;
-        if (metrics.hasWeather) {
+        if (metrics.hasHeadsUp) {
+            total += IdleStripLayout::kSlotGap * 2.0f + IdleStripLayout::kDividerWidth +
+                     metrics.headsUpWidth;
+        } else if (metrics.hasWeather) {
             total += IdleStripLayout::kSlotGap * 2.0f + IdleStripLayout::kDividerWidth +
                      metrics.weatherWidth;
         }
@@ -13383,6 +15082,49 @@ class Renderer {
         cache.width = width;
         cache.valid = true;
         return width;
+    }
+
+    float MeasureTextWidth(const std::wstring& text, IDWriteTextFormat* fmt) {
+        float width = 0.0f;
+        if (fmt && dwriteFactory_ && !text.empty()) {
+            ComPtr<IDWriteTextLayout> layout;
+            if (SUCCEEDED(dwriteFactory_->CreateTextLayout(
+                    text.c_str(), static_cast<UINT32>(text.size()), fmt,
+                    4096.0f, IdleStripLayout::kHeight, &layout)) &&
+                layout) {
+                DWRITE_TEXT_METRICS tm = {};
+                if (SUCCEEDED(layout->GetMetrics(&tm))) {
+                    width = std::max(tm.width, tm.widthIncludingTrailingWhitespace);
+                }
+            }
+        }
+        return width;
+    }
+
+    // Keeps the " in 12 min" / " now" suffix and ellipsizes the title so the
+    // collapsed pill never exceeds IdleStripLayout::kMaxWidth.
+    std::wstring TruncateHeadsUp(const std::wstring& text, IDWriteTextFormat* fmt, float budget) {
+        if (text.empty() || budget < 28.0f) return {};
+        if (MeasureTextWidth(text, fmt) <= budget) return text;
+        size_t pos = text.rfind(L" in ");
+        if (pos == std::wstring::npos) pos = text.rfind(L" now");
+        const std::wstring suffix = pos == std::wstring::npos ? std::wstring() : text.substr(pos);
+        const std::wstring title = pos == std::wstring::npos ? text : text.substr(0, pos);
+        const std::wstring ellipsis = L"\u2026";
+        if (MeasureTextWidth(ellipsis + suffix, fmt) > budget) return {};
+        size_t lo = 0;
+        size_t hi = title.size();
+        while (lo < hi) {
+            const size_t mid = (lo + hi + 1) / 2;
+            if (MeasureTextWidth(title.substr(0, mid) + ellipsis + suffix, fmt) <= budget) lo = mid;
+            else hi = mid - 1;
+        }
+        if (lo > 0 && lo < title.size()) {
+            const wchar_t cut = title[lo - 1];
+            if (cut >= 0xD800 && cut <= 0xDBFF) --lo;
+        }
+        if (lo == 0) return ellipsis + suffix;
+        return title.substr(0, lo) + ellipsis + suffix;
     }
 
     bool CreateBackingBitmap(int width, int height) {
@@ -14449,17 +16191,126 @@ class Renderer {
 
 
 
-    void DrawCalendarDashboard(const SharedState& state, D2D1_RECT_F rect, const Settings& settings, double now, float scale, SYSTEMTIME& local) {
-        (void)state;
-        (void)now;
+    // Compact date plus the next few events, used once a calendar feed has loaded.
+    // The month grid is drawn by the caller, to the right of this card.
+    void DrawCalendarAgenda(const GcalSnapshot& gcal, D2D1_RECT_F rect, const Settings& settings,
+                            float scale, const SYSTEMTIME& local, ID2D1SolidColorBrush* accent) {
+        const D2D1_RECT_F card = D2D1::RectF(rect.left + 14.0f * scale, rect.top + 14.0f * scale,
+                                             rect.left + 168.0f * scale, rect.bottom - 16.0f * scale);
+        DrawCard(card, 12.0f * scale);
 
-        // ── Hero column ──────────────────────────────────────────────────────
-        // Today's date as an editorial block: month over a large day figure over
-        // the weekday. Uses the shared DrawCard so it matches every other panel
-        // instead of being a one-off translucent slab.
-        const D2D1_RECT_F hero = D2D1::RectF(rect.left + 22.0f * scale, rect.top + 16.0f * scale,
-                                             rect.left + 115.0f * scale, rect.bottom - 20.0f * scale);
-        DrawCard(hero, 12.0f * scale);
+        const float pad = 8.0f * scale;
+        const D2D1_RECT_F header = D2D1::RectF(card.left + pad, card.top + 2.0f * scale,
+                                               card.right - pad, card.top + 54.0f * scale);
+        const D2D1_RECT_F dayRect = D2D1::RectF(header.right - 52.0f * scale, header.top,
+                                                header.right, header.bottom);
+
+        if (boldTextFormat_ && accent) {
+            boldTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            boldTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            target_->DrawTextW(calendarCachedMonthName_.c_str(),
+                               static_cast<UINT32>(calendarCachedMonthName_.size()),
+                               boldTextFormat_.Get(),
+                               D2D1::RectF(header.left, header.top, dayRect.left - 4.0f * scale,
+                                           header.top + 22.0f * scale),
+                               accent, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            boldTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            boldTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        }
+        mutedBrush_->SetOpacity(0.70f);
+        if (smallTextFormat_) {
+            smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            target_->DrawTextW(calendarCachedWeekdayName_.c_str(),
+                               static_cast<UINT32>(calendarCachedWeekdayName_.size()),
+                               smallTextFormat_.Get(),
+                               D2D1::RectF(header.left, header.top + 20.0f * scale, dayRect.left - 4.0f * scale,
+                                           header.bottom),
+                               mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+        }
+
+        wchar_t dayStr[16] = {};
+        swprintf_s(dayStr, L"%d", local.wDay);
+        textBrush_->SetOpacity(0.97f);
+        target_->DrawTextW(dayStr, static_cast<UINT32>(wcslen(dayStr)),
+                           hugeTextFormat_ ? hugeTextFormat_.Get() : boldTextFormat_.Get(),
+                           dayRect, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+
+        ComPtr<ID2D1SolidColorBrush> hrBrush;
+        if (SUCCEEDED(target_->CreateSolidColorBrush(
+                WithAlpha(material_.hairline, material_.hairline.a * settingsOpacity_), &hrBrush)) && hrBrush) {
+            const float y = header.bottom + 1.0f * scale;
+            target_->DrawLine(D2D1::Point2F(card.left + pad, y), D2D1::Point2F(card.right - pad, y),
+                              hrBrush.Get(), 1.0f * scale);
+        }
+
+        std::vector<const GcalEvent*> upcoming;
+        GcalUpcoming(gcal, 3, upcoming);
+
+        const float listTop = header.bottom + 6.0f * scale;
+        const float listBottom = card.bottom - 6.0f * scale;
+        const float rowH = (listBottom - listTop) / 3.0f;
+        if (upcoming.empty()) {
+            mutedBrush_->SetOpacity(0.55f);
+            if (smallTextFormat_) {
+                smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+                smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+                const wchar_t* quiet = L"Nothing coming up";
+                target_->DrawTextW(quiet, static_cast<UINT32>(wcslen(quiet)), smallTextFormat_.Get(),
+                                   D2D1::RectF(card.left + pad, listTop, card.right - pad, listBottom),
+                                   mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+            }
+        } else if (accent) {
+            for (size_t i = 0; i < upcoming.size(); ++i) {
+                const GcalEvent* ev = upcoming[i];
+                const float top = listTop + static_cast<float>(i) * rowH;
+                const D2D1_RECT_F row = D2D1::RectF(card.left + pad, top, card.right - pad, top + rowH);
+                std::wstring when;
+                if (ev->allDay) {
+                    when = L"All day";
+                } else {
+                    SYSTEMTIME st{};
+                    st.wYear = static_cast<WORD>(ev->year);
+                    st.wMonth = static_cast<WORD>(ev->month);
+                    st.wDay = static_cast<WORD>(ev->day);
+                    st.wHour = static_cast<WORD>(ev->hour);
+                    st.wMinute = static_cast<WORD>(ev->minute);
+                    when = FormatIslandTime(st, settings.clockFollowSystem, settings.use24HourClock, false);
+                }
+                const float timeW = 58.0f * scale;
+                if (smallTextFormat_) {
+                    smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+                    smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+                    target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), smallTextFormat_.Get(),
+                                       D2D1::RectF(row.left, row.top, row.left + timeW, row.bottom),
+                                       accent, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                }
+                std::wstring title = ev->summary;
+                if (!ev->location.empty()) {
+                    title += L"  ·  ";
+                    title += ev->location;
+                }
+                textBrush_->SetOpacity(0.92f);
+                if (textFormat_) {
+                    textFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+                    target_->DrawTextW(title.c_str(), static_cast<UINT32>(title.size()), textFormat_.Get(),
+                                       D2D1::RectF(row.left + timeW, row.top, row.right, row.bottom),
+                                       textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    textFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                }
+            }
+        }
+
+        textBrush_->SetOpacity(0.96f);
+        mutedBrush_->SetOpacity(0.75f);
+    }
+
+    void DrawCalendarDashboard(const SharedState& state, D2D1_RECT_F rect, const Settings& settings, double now, float scale, SYSTEMTIME& local) {
+        (void)now;
 
         // The accent is the album-art / system accent like everywhere else. This
         // used to fall back to a hardcoded red (#D94A38) whenever the mode wasn't
@@ -14516,6 +16367,28 @@ class Renderer {
             calendarCachedDate_ = local;
         }
 
+        // With a loaded calendar the left column becomes a compact date plus the
+        // next few events, and the month grid shifts right to make room. Until a
+        // feed has loaded, the hero below is the original layout.
+        const GcalSnapshot* gcalSnap = state.gcal.get();
+        const bool agenda = gcalSnap && gcalSnap->loaded;
+        float gridStart = rect.left + 134.0f * scale;
+        float colW = 28.0f * scale;
+
+        if (agenda) {
+            DrawCalendarAgenda(*gcalSnap, rect, settings, scale, local, accent.Get());
+            gridStart = rect.left + 176.0f * scale;
+            const float gridRight = rect.right - 12.0f * scale;
+            colW = std::max(18.0f * scale, (gridRight - gridStart) / 7.0f);
+        } else {
+        // ── Hero column ──────────────────────────────────────────────────────
+        // Today's date as an editorial block: month over a large day figure over
+        // the weekday. Uses the shared DrawCard so it matches every other panel
+        // instead of being a one-off translucent slab.
+        const D2D1_RECT_F hero = D2D1::RectF(rect.left + 22.0f * scale, rect.top + 16.0f * scale,
+                                             rect.left + 115.0f * scale, rect.bottom - 20.0f * scale);
+        DrawCard(hero, 12.0f * scale);
+
         // Month and year stay on separate lines. Putting them on one ("September
         // 2026") needs about 95px at 12px bold and the hero column only offers
         // 85, so any long month name clipped -- and month names are exactly the
@@ -14561,11 +16434,10 @@ class Renderer {
                                            hero.right - 4.0f * scale, hero.bottom - 6.0f * scale),
                                mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
+        }
 
         // ── Month grid ───────────────────────────────────────────────────────
-        const float gridStart = rect.left + 134.0f * scale;
         const float gridTop = rect.top + 16.0f * scale;
-        const float colW = 28.0f * scale;
         const float headerH = 18.0f * scale;
         const int firstDay = calendarCachedFirstDay_;
 
@@ -14617,6 +16489,12 @@ class Renderer {
                                                  gridStart + (col + 1) * colW, datesTop + (row + 1) * rowH);
             const std::wstring dayText = std::to_wstring(d);
             const int weekday = (firstDay + col) % 7;
+            const bool hasEvent = agenda && GcalCoversDay(gcalSnap, local.wYear, local.wMonth, d);
+            // Nudge the figure up so the event dot under it doesn't sit on the digit.
+            D2D1_RECT_F textCell = cell;
+            if (hasEvent && d != local.wDay) {
+                textCell.bottom -= 3.0f * scale;
+            }
 
             if (d == local.wDay) {
                 target_->FillEllipse(
@@ -14628,17 +16506,36 @@ class Renderer {
                 // other days use.
                 textBrush_->SetOpacity(1.0f);
                 target_->DrawTextW(dayText.c_str(), static_cast<UINT32>(dayText.size()), gridFmt,
-                                   cell, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+                                   textCell, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
             } else if (weekday == 0 || weekday == 6) {
                 // Weekends recede instead of taking the accent, leaving today as
                 // the only accented thing in the grid.
                 mutedBrush_->SetOpacity(0.62f);
                 target_->DrawTextW(dayText.c_str(), static_cast<UINT32>(dayText.size()), gridFmt,
-                                   cell, mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+                                   textCell, mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
             } else {
                 textBrush_->SetOpacity(0.88f);
                 target_->DrawTextW(dayText.c_str(), static_cast<UINT32>(dayText.size()), gridFmt,
-                                   cell, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+                                   textCell, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
+            }
+
+            if (hasEvent && accent) {
+                const float dotR = std::max(1.15f * scale, std::min(1.7f * scale, rowH * 0.09f));
+                const float cx = cell.left + colW * 0.5f;
+                const float cy = cell.top + rowH * 0.5f;
+                if (d == local.wDay) {
+                    // The accent disc fills the cell. The dot sits in the empty
+                    // lower-right of that disc, in the primary text colour.
+                    textBrush_->SetOpacity(1.0f);
+                    target_->FillEllipse(
+                        D2D1::Ellipse(D2D1::Point2F(cx + markerR * 0.42f, cy + markerR * 0.42f),
+                                      dotR, dotR),
+                        textBrush_.Get());
+                } else {
+                    target_->FillEllipse(
+                        D2D1::Ellipse(D2D1::Point2F(cx, cell.bottom - dotR - 0.5f * scale), dotR, dotR),
+                        accent.Get());
+                }
             }
 
             if (++col > 6) { col = 0; ++row; }
@@ -16525,10 +18422,12 @@ class Renderer {
                 rect.right - IdleStripLayout::kPadX * scale - privacyReserve;
 
             float blockWidth = idleMetrics.clockWidth;
-            if (idleMetrics.hasWeather) {
+            const float sideWidth = idleMetrics.hasHeadsUp ? idleMetrics.headsUpWidth
+                                                           : idleMetrics.weatherWidth;
+            if (idleMetrics.hasHeadsUp || idleMetrics.hasWeather) {
                 blockWidth += (IdleStripLayout::kSlotGap * 2.0f +
                                IdleStripLayout::kDividerWidth) * scale +
-                              idleMetrics.weatherWidth;
+                              sideWidth;
             }
 
             // Centre the block in whatever room the pill currently has. Mid-spring
@@ -16547,7 +18446,7 @@ class Renderer {
                                timeRect, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
             slotX += idleMetrics.clockWidth;
 
-            if (idleMetrics.hasWeather) {
+            if (idleMetrics.hasHeadsUp || idleMetrics.hasWeather) {
                 slotX += IdleStripLayout::kSlotGap * scale;
 
                 ComPtr<ID2D1SolidColorBrush> divider;
@@ -16564,14 +18463,25 @@ class Renderer {
                 }
                 slotX += (IdleStripLayout::kDividerWidth + IdleStripLayout::kSlotGap) * scale;
 
-                wchar_t weatherLabel[32] = {};
-                if (hasWeather) swprintf_s(weatherLabel, L"%s %.0f\x00B0", wIcon.c_str(), state.weather.temperature);
-                else wcscpy_s(weatherLabel, ARRAYSIZE(weatherLabel), L"\U0001F321\uFE0F --\x00B0");
+                const D2D1_RECT_F sideRect =
+                    D2D1::RectF(slotX, rect.top, slotX + sideWidth, rect.bottom);
+                if (idleMetrics.hasHeadsUp) {
+                    ComPtr<ID2D1SolidColorBrush> headsUpBrush;
+                    D2D1_COLOR_F headsUpColor = material_.accent;
+                    headsUpColor.a = 0.95f * settingsOpacity_;
+                    if (SUCCEEDED(target_->CreateSolidColorBrush(headsUpColor, &headsUpBrush)) && headsUpBrush) {
+                        target_->DrawTextW(idleMetrics.headsUpText.c_str(),
+                                           static_cast<UINT32>(idleMetrics.headsUpText.size()), idleFmt,
+                                           sideRect, headsUpBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    }
+                } else {
+                    wchar_t weatherLabel[32] = {};
+                    if (hasWeather) swprintf_s(weatherLabel, L"%s %.0f\x00B0", wIcon.c_str(), state.weather.temperature);
+                    else wcscpy_s(weatherLabel, ARRAYSIZE(weatherLabel), L"\U0001F321\uFE0F --\x00B0");
 
-                const D2D1_RECT_F wRect =
-                    D2D1::RectF(slotX, rect.top, slotX + idleMetrics.weatherWidth, rect.bottom);
-                target_->DrawTextW(weatherLabel, static_cast<UINT32>(wcslen(weatherLabel)), idleFmt,
-                                   wRect, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+                    target_->DrawTextW(weatherLabel, static_cast<UINT32>(wcslen(weatherLabel)), idleFmt,
+                                       sideRect, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+                }
             }
             textBrush_->SetOpacity(1.0f);
 
@@ -25590,6 +27500,10 @@ bool StartThreads() {
     g_mediaThread = CreateThread(nullptr, 0, MediaThreadProc, nullptr, 0, nullptr);
     g_audioThread = CreateThread(nullptr, 0, AudioThreadProc, nullptr, 0, nullptr);
     g_weatherThread = CreateThread(nullptr, 0, WeatherThreadProc, nullptr, 0, nullptr);
+    g_gcalWakeEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+    if (g_gcalWakeEvent) {
+        g_gcalThread = CreateThread(nullptr, 0, GcalThreadProc, nullptr, 0, nullptr);
+    }
     g_lyricsThread = CreateThread(nullptr, 0, LyricsThreadProc, nullptr, 0, nullptr);
     g_keyboardThread = CreateThread(nullptr, 0, KeyboardThreadProc, nullptr, 0, &g_keyboardThreadId);
     g_mouseThread = CreateThread(nullptr, 0, MouseThreadProc, nullptr, 0, &g_mouseThreadId);
@@ -25614,7 +27528,7 @@ void StopThreads() {
         SetEvent(g_stopEvent);
     }
 
-    HANDLE handles[] = {g_renderThread, g_mediaThread, g_audioThread, g_weatherThread, g_lyricsThread, g_notificationThread, g_keyboardThread, g_mouseThread, g_bluetoothThread};
+    HANDLE handles[] = {g_renderThread, g_mediaThread, g_audioThread, g_weatherThread, g_gcalThread, g_lyricsThread, g_notificationThread, g_keyboardThread, g_mouseThread, g_bluetoothThread};
     for (HANDLE handle : handles) {
         if (handle) {
             WaitForSingleObject(handle, 3000);
@@ -25626,6 +27540,7 @@ void StopThreads() {
     g_mediaThread = nullptr;
     g_audioThread = nullptr;
     g_weatherThread = nullptr;
+    g_gcalThread = nullptr;
     g_lyricsThread = nullptr;
     g_notificationThread = nullptr;
     g_keyboardThread = nullptr;
@@ -25645,6 +27560,10 @@ void StopThreads() {
     if (g_mediaRefreshEvent) {
         CloseHandle(g_mediaRefreshEvent);
         g_mediaRefreshEvent = nullptr;
+    }
+    if (g_gcalWakeEvent) {
+        CloseHandle(g_gcalWakeEvent);
+        g_gcalWakeEvent = nullptr;
     }
 
     g_running = false;

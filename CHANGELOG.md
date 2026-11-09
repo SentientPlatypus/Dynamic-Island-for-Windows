@@ -4,6 +4,10 @@ All notable changes, enhancements, and bug fixes for **Dynamic Island for Window
 
 ---
 
+## [1.4.0-gcal.1]
+
+Fork of 1.4.0 that installs beside the upstream mod (`dynamic-island-for-windows-gcal`). The calendar tab reads one or more private Google Calendar iCal addresses: days with events are dotted, the next few events are listed beside the month, and the collapsed island can show a heads-up such as `CS 4789 in 12 min` shortly before a timed event. No Google sign-in. A failed refresh keeps the last events that loaded.
+
 ## [1.4.0] — 2026-10-20
 
 ### ✨ New Features
