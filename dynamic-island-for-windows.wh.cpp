@@ -2,7 +2,7 @@
 // @id              dynamic-island-for-windows-gcal
 // @name            Dynamic Island for Windows (Google Calendar)
 // @description     A living, breathing pill overlay inspired by iPhone's Dynamic Island, with Google Calendar events from a private iCal link. Reacts to media, downloads, clipboard, battery, and more.
-// @version         1.4.0-gcal.4
+// @version         1.4.0-gcal.5
 // @author          Himanshu
 // @github          https://github.com/SentientPlatypus
 // @include         windhawk.exe
@@ -99,7 +99,7 @@ The calendar tab can show events from your Google Calendar without signing in. T
 3. Choose **Settings and sharing**.
 4. Scroll to **Integrate calendar** and copy **Secret address in iCal format**. It looks like `https://calendar.google.com/calendar/ical/.../basic.ics`.
 5. In Windhawk, open this mod's settings and paste that address into **Google Calendar → iCal URLs**. More than one calendar is fine: separate the addresses with commas or put each one on its own line.
-6. The calendar tab opens as an agenda: days grouped under **Today**, **Tomorrow**, and a date, with the time on the left and the title on the right. Each calendar keeps its Google color (a bar on the row, and the dot on the month grid). Deadlines (zero-length, or around 11:59 PM) read as **Due 11:59 PM** in that color. Scroll the list when it is longer than the panel. Click the month header, or the **Month** chip, to get the month grid back; hover a day and that day's events open in a panel beside the island. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
+6. The calendar tab opens as an agenda: days grouped under **Today**, **Tomorrow**, and a date, with the time on the left and the title on the right. Each calendar keeps its Google color (a bar on the row, and the dot on the month grid). Deadlines (zero-length, or around 11:59 PM) read as **Due 11:59 PM** in that color. Scroll the list when it is longer than the panel. Click the month header, or the **Month** chip, to get the month grid back; hover a day and that day's events open in a panel beside the island, widened to fit the title. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
 
 The secret address is a private link: anyone who has it can read that calendar, so treat it like a password. The feed is refreshed in the background (every 15 minutes by default). If the PC is offline, the island keeps the last events it successfully loaded.
 
@@ -15327,11 +15327,14 @@ struct DayPanelItem {
     bool happening = false;
     bool past = false;
     float h = 26.0f;
+    int titleLines = 1;
+    float titleH = 16.0f;
 };
 
 // Content pixels. The panel window is this size times sizeScale, same as the island.
 struct DayPanelMetrics {
-    static constexpr float kW = 300.0f;
+    static constexpr float kMinW = 320.0f;
+    static constexpr float kMaxW = 460.0f;
     static constexpr float kMaxH = 360.0f;
     static constexpr float kClosedW = 52.0f;
     static constexpr float kClosedH = 36.0f;
@@ -16089,7 +16092,9 @@ class Renderer {
                             y += rowH + DayPanelMetrics::kGap;
                             if (rowTop + rowH < list.top - 8.0f || rowTop > list.bottom + 8.0f) continue;
                             const float fade = item.past ? 0.38f : 1.0f;
-                            const float titleBand = item.location.empty() ? rowH : 16.0f;
+                            const float titleBand = item.titleLines > 1
+                                ? item.titleH / static_cast<float>(item.titleLines)
+                                : (item.location.empty() ? rowH : item.titleH);
                             if (item.happening) {
                                 D2D1_COLOR_F wash = GcalRgb(item.color, 0.22f * fade * settingsOpacity_);
                                 if (ID2D1SolidColorBrush* washBrush = AcquireBrush(wash)) {
@@ -16135,19 +16140,23 @@ class Renderer {
                             }
                             if (titleFmt && textBrush_) {
                                 textBrush_->SetOpacity(0.96f * fade);
+                                const float titleW = std::max(12.0f, titleRight - titleLeft);
                                 DWRITE_TEXT_METRICS tm{};
-                                if (auto layout = MakeLineLayout(item.title, titleFmt,
-                                                                 std::max(12.0f, titleRight - titleLeft), &tm, true)) {
-                                    target_->DrawTextLayout(D2D1::Point2F(titleLeft, rowTop), layout.Get(),
+                                ComPtr<IDWriteTextLayout> titleLayout = item.titleLines > 1
+                                    ? MakeWrapLayout(item.title, titleFmt, titleW, 2)
+                                    : MakeLineLayout(item.title, titleFmt, titleW, &tm, true);
+                                if (titleLayout) {
+                                    target_->DrawTextLayout(D2D1::Point2F(titleLeft, rowTop), titleLayout.Get(),
                                                             textBrush_.Get());
                                 }
                             }
                             if (!item.location.empty() && metaFmt && mutedBrush_) {
                                 mutedBrush_->SetOpacity(0.62f * fade);
                                 DWRITE_TEXT_METRICS tm{};
+                                const float locTop = rowTop + (item.titleLines > 1 ? item.titleH + 2.0f : 16.0f);
                                 if (auto layout = MakeLineLayout(item.location, metaFmt,
                                                                  std::max(12.0f, titleRight - titleLeft), &tm, true)) {
-                                    target_->DrawTextLayout(D2D1::Point2F(titleLeft, rowTop + 16.0f), layout.Get(),
+                                    target_->DrawTextLayout(D2D1::Point2F(titleLeft, locTop), layout.Get(),
                                                             mutedBrush_.Get());
                                 }
                             }
@@ -16299,6 +16308,7 @@ class Renderer {
 
         const bool open = dayOpen_ > 0;
         float contentTarget = DayPanelMetrics::kClosedH;
+        float fittedContentW = DayPanelMetrics::kMinW;
         if (!open && !dayEngaged_) return false;
 
         if (open && !dayEngaged_) {
@@ -16419,7 +16429,6 @@ class Renderer {
                     item.due = row.due;
                     item.happening = row.happening;
                     item.past = row.past;
-                    item.h = ev.location.empty() ? DayPanelMetrics::kRow : DayPanelMetrics::kRowLoc;
                     if (ev.allDay) {
                         item.when = Loc(L"All day");
                     } else {
@@ -16433,6 +16442,74 @@ class Renderer {
                         if (row.due) item.when = std::wstring(Loc(L"Due")) + L" " + item.when;
                     }
                     dayItems_.push_back(std::move(item));
+                }
+            }
+
+            EnsureTextFormats(settings.sizeScale, settings.fontFamily, settings.textScale);
+            IDWriteTextFormat* titleFmt = agendaTitleFormat_ ? agendaTitleFormat_.Get() : textFormat_.Get();
+            IDWriteTextFormat* metaFmt = agendaMetaFormat_ ? agendaMetaFormat_.Get() : smallTextFormat_.Get();
+            IDWriteTextFormat* dayFmt = agendaDayFormat_ ? agendaDayFormat_.Get() : boldTextFormat_.Get();
+
+            float longest = 0.0f;
+            for (const DayPanelItem& item : dayItems_) {
+                longest = std::max(longest, MeasureUnwrappedWidth(item.title, titleFmt));
+                longest = std::max(longest, MeasureUnwrappedWidth(item.location, metaFmt));
+            }
+            if (dayEmpty_) {
+                const float quiet = MeasureUnwrappedWidth(Loc(L"Nothing scheduled"), metaFmt);
+                longest = std::max(longest, std::max(0.0f, quiet - DayPanelMetrics::kTimeW));
+            }
+            float header = MeasureUnwrappedWidth(dayHeader_, dayFmt);
+            if (!dayBadge_.empty()) header += 8.0f + 72.0f;
+            const float fromHeader = header + DayPanelMetrics::kPadX * 2.0f;
+            const float fromRows = DayPanelMetrics::kPadX + DayPanelMetrics::kTimeW + longest + 4.0f +
+                                   DayPanelMetrics::kPadX;
+            float desired = std::max(fromHeader, fromRows);
+            desired = Clamp(desired, DayPanelMetrics::kMinW, DayPanelMetrics::kMaxW);
+
+            const RECT fitWork = GetAnchorWorkRect();
+            const float fitGap = 12.0f * scale;
+            constexpr float kMargin = 8.0f;
+            const float desiredScreen = desired * scale;
+            const float roomRight = static_cast<float>(fitWork.right) - kMargin -
+                                    (static_cast<float>(islandPill.right) + fitGap);
+            const float roomLeft = (static_cast<float>(islandPill.left) - fitGap) -
+                                   (static_cast<float>(fitWork.left) + kMargin);
+            const bool onRight = roomRight + 0.5f >= desiredScreen || roomRight >= roomLeft;
+            const float room = std::max(1.0f, onRight ? roomRight : roomLeft);
+            float screenW = std::min(desiredScreen, room);
+            const float minScreen = DayPanelMetrics::kMinW * scale;
+            const float maxScreen = DayPanelMetrics::kMaxW * scale;
+            if (room >= minScreen) {
+                screenW = Clamp(screenW, minScreen, std::min(maxScreen, room));
+            }
+            fittedContentW = screenW / scale;
+            dayOnRight_ = onRight;
+
+            const float column = std::max(12.0f, fittedContentW - DayPanelMetrics::kPadX -
+                                                      DayPanelMetrics::kTimeW - DayPanelMetrics::kPadX);
+            float titleLine = 16.0f;
+            float locLine = 16.0f;
+            {
+                DWRITE_TEXT_METRICS tm{};
+                if (auto probe = MakeLineLayout(L"Mg", titleFmt, 200.0f, &tm, false)) {
+                    titleLine = std::max(14.0f, tm.height);
+                }
+                tm = {};
+                if (auto probe = MakeLineLayout(L"Mg", metaFmt, 200.0f, &tm, false)) {
+                    locLine = std::max(12.0f, tm.height);
+                }
+            }
+            for (DayPanelItem& item : dayItems_) {
+                const float natural = MeasureUnwrappedWidth(item.title, titleFmt);
+                item.titleLines = natural > column + 1.0f ? 2 : 1;
+                if (item.titleLines == 1) {
+                    item.titleH = 16.0f;
+                    item.h = item.location.empty() ? DayPanelMetrics::kRow : DayPanelMetrics::kRowLoc;
+                } else {
+                    item.titleH = titleLine * 2.0f;
+                    item.h = item.location.empty() ? std::max(DayPanelMetrics::kRow, item.titleH + 8.0f)
+                                                   : std::max(DayPanelMetrics::kRowLoc, item.titleH + 4.0f + locLine);
                 }
             }
 
@@ -16495,7 +16572,7 @@ class Renderer {
             }
         };
 
-        const float targetW = (open ? DayPanelMetrics::kW : DayPanelMetrics::kClosedW) * scale;
+        const float targetW = (open ? fittedContentW : DayPanelMetrics::kClosedW) * scale;
         const float targetH = contentTarget * scale;
         stepTo(dayW_, targetW);
         stepTo(dayH_, targetH);
@@ -16517,11 +16594,9 @@ class Renderer {
 
         const RECT work = GetAnchorWorkRect();
         const float gap = 12.0f * scale;
-        const float placeW = std::max(dayW_.target, dayW_.value);
-        float screenLeft = static_cast<float>(islandPill.right) + gap;
-        if (screenLeft + placeW > static_cast<float>(work.right) - 8.0f) {
-            screenLeft = static_cast<float>(islandPill.left) - gap - dayW_.value;
-        }
+        float screenLeft = dayOnRight_
+            ? static_cast<float>(islandPill.right) + gap
+            : static_cast<float>(islandPill.left) - gap - dayW_.value;
         if (screenLeft < static_cast<float>(work.left) + 8.0f) {
             screenLeft = static_cast<float>(work.left) + 8.0f;
         }
@@ -25052,6 +25127,58 @@ class Renderer {
         return layout;
     }
 
+    // Natural single-line width, in the text format's own pixels (content px
+    // for the agenda formats, which the panel's sizeScale transform enlarges).
+    float MeasureUnwrappedWidth(const std::wstring& text, IDWriteTextFormat* fmt) {
+        if (!fmt || text.empty() || !dwriteFactory_) return 0.0f;
+        ComPtr<IDWriteTextLayout> layout;
+        if (FAILED(dwriteFactory_->CreateTextLayout(text.c_str(), static_cast<UINT32>(text.size()),
+                                                    fmt, 8192.0f, 200.0f, &layout)) || !layout) {
+            return 0.0f;
+        }
+        layout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+        DWRITE_TEXT_METRICS metrics{};
+        layout->GetMetrics(&metrics);
+        return std::ceil(metrics.widthIncludingTrailingWhitespace);
+    }
+
+    // Word-wrap to at most `maxLines`. Anything past that is ellipsized on the
+    // last line instead of being clipped mid-glyph.
+    ComPtr<IDWriteTextLayout> MakeWrapLayout(const std::wstring& text, IDWriteTextFormat* fmt,
+                                             float maxWidth, int maxLines) {
+        ComPtr<IDWriteTextLayout> layout;
+        if (!fmt || !dwriteFactory_ || text.empty() || maxLines < 1) return layout;
+        if (FAILED(dwriteFactory_->CreateTextLayout(text.c_str(), static_cast<UINT32>(text.size()),
+                                                    fmt, std::max(1.0f, maxWidth), 400.0f, &layout)) ||
+            !layout) {
+            layout.Reset();
+            return layout;
+        }
+        layout->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
+        layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        layout->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+        DWRITE_TEXT_METRICS metrics{};
+        layout->GetMetrics(&metrics);
+        if (metrics.lineCount <= static_cast<UINT32>(maxLines)) return layout;
+
+        std::vector<DWRITE_LINE_METRICS> lines(std::max<UINT32>(metrics.lineCount, 1));
+        UINT32 written = 0;
+        if (FAILED(layout->GetLineMetrics(lines.data(), static_cast<UINT32>(lines.size()), &written)) ||
+            written == 0) {
+            return layout;
+        }
+        const UINT32 keep = std::min<UINT32>(written, static_cast<UINT32>(maxLines));
+        float height = 0.0f;
+        for (UINT32 i = 0; i < keep; ++i) height += lines[i].height;
+        layout->SetMaxHeight(std::max(1.0f, height));
+        ComPtr<IDWriteInlineObject> sign;
+        if (SUCCEEDED(dwriteFactory_->CreateEllipsisTrimmingSign(layout.Get(), &sign)) && sign) {
+            DWRITE_TRIMMING trimming = {DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
+            layout->SetTrimming(&trimming, sign.Get());
+        }
+        return layout;
+    }
+
     ID2D1StrokeStyle* RoundStroke() {
         if (!roundStroke_ && d2dFactory_) {
             d2dFactory_->CreateStrokeStyle(
@@ -25689,6 +25816,7 @@ class Renderer {
     double dayMixStart_ = 0.0;
     double dayHotSince_ = -1.0;
     double dayLeaveSince_ = -1.0;
+    bool dayOnRight_ = true;
     bool dayEmpty_ = true;
     bool dayPrevEmpty_ = true;
     std::wstring dayHeader_;

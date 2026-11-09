@@ -4,6 +4,10 @@ All notable changes, enhancements, and bug fixes for **Dynamic Island for Window
 
 ---
 
+## [1.4.0-gcal.5]
+
+The month-hover side panel sizes its width to the day's titles and locations, from 320px up to 460px, and stays inside the monitor. A title that still does not fit at that width wraps to two lines, and the row grows with it, before the text is cut with an ellipsis. The width change uses the same spring as the rest of the panel.
+
 ## [1.4.0-gcal.4]
 
 Hovering a day in the month grid opens a side panel beside the island, instead of a card drawn inside it. The panel uses the island's theme, corner radius, blur, and spring animation: it grows out of a small pill, resizes as the day's list gets longer or shorter, and collapses when the pointer leaves. The list is the same agenda style as the calendar tab (color bar, time or All day / Due, title, location) and scrolls when the day has more than will fit.

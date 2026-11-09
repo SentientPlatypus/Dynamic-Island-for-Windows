@@ -12,7 +12,7 @@
 #define WH_MOD_ID L"dynamic-island-for-windows-gcal"
 #endif
 #ifndef WH_MOD_VERSION
-#define WH_MOD_VERSION L"1.4.0-gcal.4"
+#define WH_MOD_VERSION L"1.4.0-gcal.5"
 #endif
 
 inline int Wh_GetIntSetting(PCWSTR) { return 0; }
