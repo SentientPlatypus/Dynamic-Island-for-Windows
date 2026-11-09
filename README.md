@@ -78,6 +78,7 @@ A smooth, interactive overlay for your desktop, inspired by Apple's Dynamic Isla
 
 - 🟢 **Privacy Dots:** See an orange dot when your mic is on and a green dot for your camera.
 - 📅 **Dashboards:** Scroll your mouse wheel to easily switch between Media, Calendar, and live Weather (via wttr.in).
+- 📆 **Google Calendar:** Paste a calendar's secret iCal address and the month grid marks days that have events, with the next few listed beside it. See [Google Calendar](#-google-calendar) below.
 - 🔒 **Key Alerts:** Get quick visual popups when you hit Caps Lock or Num Lock.
 - 🔋 **Battery & Power:** Fluid animations when you plug in, unplug, or hit low battery.
 - 🔌 **USB Status:** Visual alerts whenever you plug in a USB drive.
@@ -129,6 +130,24 @@ Tweak the mod easily from the **Windhawk settings panel**:
 
 ---
 
+## 📅 Google Calendar
+
+This fork can show events from Google Calendar without signing in. It reads the secret iCal link Google already publishes for a calendar. A wrong or unreachable link fails quietly and the island keeps the last events it loaded.
+
+1. Open [Google Calendar](https://calendar.google.com) in a browser.
+2. Under **My calendars** or **Other calendars**, hover the calendar you want and click the three dots.
+3. Choose **Settings and sharing**.
+4. Scroll to **Integrate calendar** and copy **Secret address in iCal format**. It looks like `https://calendar.google.com/calendar/ical/.../basic.ics`.
+5. In Windhawk, open this mod's settings and paste that address into **Google Calendar → iCal URLs**. More than one calendar is fine: separate the addresses with commas or put each one on its own line.
+6. Days with events get a small dot, and the next few events (time and title) show beside the month. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
+
+The secret address is a private link. Anyone who has it can read that calendar, so treat it like a password. The feed refreshes in the background (every 15 minutes by default).
+
+**Author:** Himanshu ([devcode90](https://github.com/devcode90))
+**Fork:** [SentientPlatypus](https://github.com/SentientPlatypus)
+
+---
+
 ## 💬 Let's Chat!
 
 Found a bug? Have a cool feature idea? We want to hear from you! Please drop an issue on our [GitHub Repository](https://github.com/devcode90/Dynamic-Island-for-Windows/issues). Your feedback keeps this mod alive.
@@ -137,6 +156,8 @@ Found a bug? Have a cool feature idea? We want to hear from you! Please drop an 
 
 ## 🙌 Shoutouts
 
+- **[Himanshu (devcode90)](https://github.com/devcode90)**: Original author of Dynamic Island for Windows.
+- **[Geneustace Wicaksono (SentientPlatypus)](https://github.com/SentientPlatypus)**: Google Calendar fork. Events from a private iCal address on the calendar tab, and an upcoming-event heads-up on the collapsed island.
 - **[Sarthak Singh (sarthakaksh)](https://github.com/sarthakaksh)**: Major feature overhaul including smoothing animations, strip mode, lyrics for songs, song recognition (Shazam),  quick lookup, Cross-Source Media Switching, the right-click focus timer, hover clock, robust media controls, zero-CPU instant hide shortcut, Bluetooth battery integration, image clipboard thumbnails, and full-screen autohide fixes.
 - **[ciizerr](https://github.com/ciizerr)**: Massive thanks for fixing UI alignments, smoothing out the dashboard sizing, and polishing the calendar and weather tabs.
 - **[ChrisSch-dev @GitHub](https://github.com/ChrisSch-dev)**: Added album title support, word wrapping for weather descriptions, sleep resume fixes, and various performance/movement stability improvements.
