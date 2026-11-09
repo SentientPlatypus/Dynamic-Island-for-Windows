@@ -385,6 +385,60 @@ void TestAgendaLayout() {
            "location row follows a normal row");
 }
 
+void TestColors() {
+    uint32_t rgb = 0;
+    Expect(di_ics::ParseCssColor("#039BE5", rgb) && rgb == 0x039BE5u, "css hex");
+    Expect(di_ics::ParseCssColor("#39E", rgb) && rgb == 0x3399EEu, "css short hex");
+    Expect(di_ics::ParseCssColor("tomato", rgb) && rgb == 0xFF6347u, "css tomato is not the Google tomato");
+    Expect(di_ics::ParseCssColor("peacock", rgb) && rgb == 0x039BE5u, "palette name falls through for CSS");
+    Expect(di_ics::ParseCssColor("rgb(3, 155, 229)", rgb) && rgb == 0x039BE5u, "css rgb()");
+    Expect(di_ics::ParseFeedColor("tomato", rgb) && rgb == 0xD50000u, "feed tomato is Google's");
+    Expect(di_ics::ParseFeedColor("lavender", rgb) && rgb == 0x7986CBu, "feed lavender is Google's");
+    Expect(di_ics::ParseFeedColor("#0b8043", rgb) && rgb == 0x0B8043u, "feed hex");
+    Expect(di_ics::ParseFeedColor("red", rgb) && rgb == 0xFF0000u, "feed falls through to CSS red");
+    Expect(!di_ics::ParseFeedColor("not-a-color", rgb), "unknown name is not a color");
+    Expect(di_ics::FeedPaletteColor(0) == 0x039BE5u, "first feed is peacock");
+    Expect(di_ics::FeedPaletteColor(1) == 0x3F51B5u, "second feed is blueberry");
+    Expect(di_ics::FeedPaletteColor(11) == 0x039BE5u, "palette wraps to peacock");
+
+    const std::string ics =
+        "BEGIN:VCALENDAR\r\n"
+        "X-APPLE-CALENDAR-COLOR:#33B679\r\n"
+        "COLOR:peacock\r\n"
+        "BEGIN:VEVENT\r\n"
+        "SUMMARY:Inherited\r\n"
+        "DTSTART:20260106T150000Z\r\n"
+        "DTEND:20260106T160000Z\r\n"
+        "END:VEVENT\r\n"
+        "BEGIN:VEVENT\r\n"
+        "SUMMARY:Due\r\n"
+        "COLOR:tomato\r\n"
+        "DTSTART:20260106T235900Z\r\n"
+        "DTEND:20260106T235900Z\r\n"
+        "END:VEVENT\r\n"
+        "BEGIN:VEVENT\r\n"
+        "SUMMARY:Outlook\r\n"
+        "X-OUTLOOK-COLOR:#616161\r\n"
+        "COLOR:#F6BF26\r\n"
+        "DTSTART;VALUE=DATE:20260107\r\n"
+        "END:VEVENT\r\n"
+        "END:VCALENDAR\r\n";
+    const auto items = di_ics::ExpandCalendar(ics, YearWindow2026());
+    const di_ics::Occurrence* inherited = nullptr;
+    const di_ics::Occurrence* due = nullptr;
+    const di_ics::Occurrence* outlook = nullptr;
+    for (const auto& item : items) {
+        if (item.summary == "Inherited") inherited = &item;
+        if (item.summary == "Due") due = &item;
+        if (item.summary == "Outlook") outlook = &item;
+    }
+    Expect(inherited && inherited->hasColor && inherited->colorRgb == 0x039BE5u,
+           "COLOR on the calendar beats X-APPLE and is inherited");
+    Expect(due && due->hasColor && due->colorRgb == 0xFF6347u, "VEVENT COLOR uses the CSS name");
+    Expect(outlook && outlook->hasColor && outlook->colorRgb == 0xF6BF26u,
+           "VEVENT COLOR beats X-OUTLOOK-COLOR");
+}
+
 void TestHeadsUpAndGarbage() {
     const std::string ics =
         "BEGIN:VCALENDAR\r\n" +
@@ -425,6 +479,7 @@ int main() {
     TestMonthlyCountAndCancelledOverride();
     TestHeadsUpAndGarbage();
     TestAgendaLayout();
+    TestColors();
 
     if (g_failed != 0) {
         std::cerr << g_failed << " assertion(s) failed\n";

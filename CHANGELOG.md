@@ -4,6 +4,10 @@ All notable changes, enhancements, and bug fixes for **Dynamic Island for Window
 
 ---
 
+## [1.4.0-gcal.3]
+
+The agenda type is smaller: 13.25px titles, 12px times, 12px semibold day headers, and tighter rows. Each calendar uses a Google Calendar color — from a COLOR line in the feed, or from `|peacock` / `|#039BE5` after the iCal address. The first calendar defaults to peacock and further calendars walk the palette. That color is the row bar, the month-grid dot, and the tint behind the event happening now. Deadlines still say "Due". Hovering a day in the month grid lists everything on that day.
+
 ## [1.4.0-gcal.2]
 
 The calendar tab opens as an agenda once an iCal feed has loaded. Events are grouped under Today, Tomorrow, and a date, with the time on the left and the title on the right. Zero-length items and late-night deadlines read as "Due 11:59 PM". The panel grows to 440×300 content pixels on that tab and the list scrolls. The month grid is still there: click the date card, or the Month chip. With no iCal URL, the original month grid is unchanged.

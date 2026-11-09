@@ -2,7 +2,7 @@
 // @id              dynamic-island-for-windows-gcal
 // @name            Dynamic Island for Windows (Google Calendar)
 // @description     A living, breathing pill overlay inspired by iPhone's Dynamic Island, with Google Calendar events from a private iCal link. Reacts to media, downloads, clipboard, battery, and more.
-// @version         1.4.0-gcal.2
+// @version         1.4.0-gcal.3
 // @author          Himanshu
 // @github          https://github.com/SentientPlatypus
 // @include         windhawk.exe
@@ -99,7 +99,7 @@ The calendar tab can show events from your Google Calendar without signing in. T
 3. Choose **Settings and sharing**.
 4. Scroll to **Integrate calendar** and copy **Secret address in iCal format**. It looks like `https://calendar.google.com/calendar/ical/.../basic.ics`.
 5. In Windhawk, open this mod's settings and paste that address into **Google Calendar → iCal URLs**. More than one calendar is fine: separate the addresses with commas or put each one on its own line.
-6. The calendar tab opens as an agenda: days grouped under **Today**, **Tomorrow**, and a date, with the time on the left and the title on the right. Deadlines (zero-length, or around 11:59 PM) read as **Due 11:59 PM**. Scroll the list when it is longer than the panel. Click the month header, or the **Month** chip, to get the month grid back. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
+6. The calendar tab opens as an agenda: days grouped under **Today**, **Tomorrow**, and a date, with the time on the left and the title on the right. Each calendar keeps its Google color (a bar on the row, and the dot on the month grid). Deadlines (zero-length, or around 11:59 PM) read as **Due 11:59 PM** in that color. Scroll the list when it is longer than the panel. Click the month header, or the **Month** chip, to get the month grid back; hover a day to see everything on it. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
 
 The secret address is a private link: anyone who has it can read that calendar, so treat it like a password. The feed is refreshed in the background (every 15 minutes by default). If the PC is offline, the island keeps the last events it successfully loaded.
 
@@ -589,7 +589,7 @@ We love community contributions! To ensure high-quality updates, please follow t
 - GoogleCalendar:
   - IcsUrls: ""
     $name: iCal URLs
-    $description: "One or more Google Calendar secret iCal addresses (Settings and sharing, then Integrate calendar, then Secret address in iCal format). Separate extra calendars with commas or new lines. Leave blank to keep the month grid only."
+    $description: "One or more Google Calendar secret iCal addresses (Settings and sharing, then Integrate calendar, then Secret address in iCal format). Separate extra calendars with commas or new lines. Add |peacock or |#039BE5 after an address to color that calendar. Names are Google's palette: tomato, flamingo, tangerine, banana, sage, basil, peacock, blueberry, lavender, grape, graphite. With no color, the first calendar is peacock and each further calendar takes the next palette color. Leave blank to keep the month grid only."
   - RefreshMinutes: 15
     $name: Refresh interval (minutes)
     $description: How often to re-download the calendars. 15 by default. The last successful download is kept if a refresh fails.
@@ -974,6 +974,9 @@ struct Event {
     std::vector<When> exdates;
     bool hasRecurrenceId = false;
     When recurrenceId;
+    bool hasColor = false;
+    int colorRank = 0;  // COLOR beats X-APPLE-CALENDAR-COLOR beats X-OUTLOOK-COLOR
+    uint32_t colorRgb = 0;
 };
 
 struct Occurrence {
@@ -995,7 +998,212 @@ struct Occurrence {
     int spanEndYear = 0;
     int spanEndMonth = 0;
     int spanEndDay = 0;
+    bool hasColor = false;
+    uint32_t colorRgb = 0;  // 0xRRGGBB when hasColor
 };
+
+// Google Calendar's event palette, in the order the calendar UI lists them.
+// The product default for a new calendar is peacock.
+inline constexpr uint32_t kGooglePalette[] = {
+    0xD50000u,  // tomato
+    0xE67C73u,  // flamingo
+    0xF4511Eu,  // tangerine
+    0xF6BF26u,  // banana
+    0x33B679u,  // sage
+    0x0B8043u,  // basil
+    0x039BE5u,  // peacock
+    0x3F51B5u,  // blueberry
+    0x7986CBu,  // lavender
+    0x8E24AAu,  // grape
+    0x616161u,  // graphite
+};
+inline constexpr int kGooglePaletteCount = 11;
+inline constexpr int kGooglePalettePeacock = 6;
+
+inline uint32_t FeedPaletteColor(int feedIndex) {
+    if (feedIndex < 0) feedIndex = 0;
+    return kGooglePalette[(kGooglePalettePeacock + feedIndex) % kGooglePaletteCount];
+}
+
+inline std::string_view TrimColorText(std::string_view s) {
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t' || s.front() == '\r' || s.front() == '\n')) {
+        s.remove_prefix(1);
+    }
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\r' || s.back() == '\n')) {
+        s.remove_suffix(1);
+    }
+    if (s.size() >= 2 && ((s.front() == '"' && s.back() == '"') || (s.front() == '\'' && s.back() == '\''))) {
+        s.remove_prefix(1);
+        s.remove_suffix(1);
+    }
+    return s;
+}
+
+inline int HexNibble(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+inline bool ParseHexColor(std::string_view s, uint32_t& rgb) {
+    if (!s.empty() && s.front() == '#') s.remove_prefix(1);
+    if (s.size() != 3 && s.size() != 4 && s.size() != 6 && s.size() != 8) return false;
+    const bool wide = s.size() >= 6;
+    auto channel = [&](size_t index) -> int {
+        if (wide) {
+            const int hi = HexNibble(s[index]);
+            const int lo = HexNibble(s[index + 1]);
+            if (hi < 0 || lo < 0) return -1;
+            return hi * 16 + lo;
+        }
+        const int n = HexNibble(s[index]);
+        if (n < 0) return -1;
+        return n * 16 + n;
+    };
+    const int r = channel(0);
+    const int g = channel(wide ? 2 : 1);
+    const int b = channel(wide ? 4 : 2);
+    if (r < 0 || g < 0 || b < 0) return false;
+    rgb = (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
+    return true;
+}
+
+inline bool ParseRgbFunc(std::string_view s, uint32_t& rgb) {
+    if (s.size() < 10) return false;
+    auto lower = [](char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; };
+    if (lower(s[0]) != 'r' || lower(s[1]) != 'g' || lower(s[2]) != 'b' || s[3] != '(' || s.back() != ')') {
+        return false;
+    }
+    s.remove_prefix(4);
+    s.remove_suffix(1);
+    int chans[3] = {};
+    size_t i = 0;
+    for (int c = 0; c < 3; ++c) {
+        while (i < s.size() && (s[i] == ' ' || s[i] == '\t')) ++i;
+        if (i >= s.size() || s[i] < '0' || s[i] > '9') return false;
+        int val = 0;
+        while (i < s.size() && s[i] >= '0' && s[i] <= '9') {
+            val = val * 10 + (s[i] - '0');
+            ++i;
+            if (val > 10000) return false;
+        }
+        bool pct = false;
+        if (i < s.size() && s[i] == '%') {
+            pct = true;
+            ++i;
+        }
+        while (i < s.size() && (s[i] == ' ' || s[i] == '\t')) ++i;
+        if (c < 2) {
+            if (i >= s.size() || s[i] != ',') return false;
+            ++i;
+        }
+        if (pct) val = val * 255 / 100;
+        if (val > 255) val = 255;
+        chans[c] = val;
+    }
+    rgb = (static_cast<uint32_t>(chans[0]) << 16) | (static_cast<uint32_t>(chans[1]) << 8) |
+          static_cast<uint32_t>(chans[2]);
+    return true;
+}
+
+// Comma-wrapped "name=rrggbb" so a short name cannot match inside a longer one.
+inline constexpr char kGoogleColorNames[] =
+    ",tomato=d50000,flamingo=e67c73,tangerine=f4511e,banana=f6bf26,sage=33b679,basil=0b8043,"
+    "peacock=039be5,blueberry=3f51b5,lavender=7986cb,grape=8e24aa,graphite=616161,";
+
+inline constexpr char kCssColorNames[] =
+    ",aliceblue=f0f8ff,antiquewhite=faebd7,aqua=00ffff,aquamarine=7fffd4,azure=f0ffff,beige=f5f5dc,"
+    "bisque=ffe4c4,black=000000,blanchedalmond=ffebcd,blue=0000ff,blueviolet=8a2be2,brown=a52a2a,"
+    "burlywood=deb887,cadetblue=5f9ea0,chartreuse=7fff00,chocolate=d2691e,coral=ff7f50,"
+    "cornflowerblue=6495ed,cornsilk=fff8dc,crimson=dc143c,cyan=00ffff,darkblue=00008b,darkcyan=008b8b,"
+    "darkgoldenrod=b8860b,darkgray=a9a9a9,darkgreen=006400,darkgrey=a9a9a9,darkkhaki=bdb76b,"
+    "darkmagenta=8b008b,darkolivegreen=556b2f,darkorange=ff8c00,darkorchid=9932cc,darkred=8b0000,"
+    "darksalmon=e9967a,darkseagreen=8fbc8f,darkslateblue=483d8b,darkslategray=2f4f4f,darkslategrey=2f4f4f,"
+    "darkturquoise=00ced1,darkviolet=9400d3,deeppink=ff1493,deepskyblue=00bfff,dimgray=696969,"
+    "dimgrey=696969,dodgerblue=1e90ff,firebrick=b22222,floralwhite=fffaf0,forestgreen=228b22,"
+    "fuchsia=ff00ff,gainsboro=dcdcdc,ghostwhite=f8f8ff,gold=ffd700,goldenrod=daa520,gray=808080,"
+    "green=008000,greenyellow=adff2f,grey=808080,honeydew=f0fff0,hotpink=ff69b4,indianred=cd5c5c,"
+    "indigo=4b0082,ivory=fffff0,khaki=f0e68c,lavender=e6e6fa,lavenderblush=fff0f5,lawngreen=7cfc00,"
+    "lemonchiffon=fffacd,lightblue=add8e6,lightcoral=f08080,lightcyan=e0ffff,lightgoldenrodyellow=fafad2,"
+    "lightgray=d3d3d3,lightgreen=90ee90,lightgrey=d3d3d3,lightpink=ffb6c1,lightsalmon=ffa07a,"
+    "lightseagreen=20b2aa,lightskyblue=87cefa,lightslategray=778899,lightslategrey=778899,"
+    "lightsteelblue=b0c4de,lightyellow=ffffe0,lime=00ff00,limegreen=32cd32,linen=faf0e6,magenta=ff00ff,"
+    "maroon=800000,mediumaquamarine=66cdaa,mediumblue=0000cd,mediumorchid=ba55d3,mediumpurple=9370db,"
+    "mediumseagreen=3cb371,mediumslateblue=7b68ee,mediumspringgreen=00fa9a,mediumturquoise=48d1cc,"
+    "mediumvioletred=c71585,midnightblue=191970,mintcream=f5fffa,mistyrose=ffe4e1,moccasin=ffe4b5,"
+    "navajowhite=ffdead,navy=000080,oldlace=fdf5e6,olive=808000,olivedrab=6b8e23,orange=ffa500,"
+    "orangered=ff4500,orchid=da70d6,palegoldenrod=eee8aa,palegreen=98fb98,paleturquoise=afeeee,"
+    "palevioletred=db7093,papayawhip=ffefd5,peachpuff=ffdab9,peru=cd853f,pink=ffc0cb,plum=dda0dd,"
+    "powderblue=b0e0e6,purple=800080,rebeccapurple=663399,red=ff0000,rosybrown=bc8f8f,royalblue=4169e1,"
+    "saddlebrown=8b4513,salmon=fa8072,sandybrown=f4a460,seagreen=2e8b57,seashell=fff5ee,sienna=a0522d,"
+    "silver=c0c0c0,skyblue=87ceeb,slateblue=6a5acd,slategray=708090,slategrey=708090,snow=fffafa,"
+    "springgreen=00ff7f,steelblue=4682b4,tan=d2b48c,teal=008080,thistle=d8bfd8,tomato=ff6347,"
+    "turquoise=40e0d0,violet=ee82ee,wheat=f5deb3,white=ffffff,whitesmoke=f5f5f5,yellow=ffff00,"
+    "yellowgreen=9acd32,";
+
+inline bool LookupNamedColor(std::string_view table, std::string_view name, uint32_t& rgb) {
+    if (name.empty() || name.size() > 32) return false;
+    std::string key;
+    key.push_back(',');
+    for (char ch : name) {
+        if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+        else if (!((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9'))) return false;
+        key.push_back(ch);
+    }
+    key.push_back('=');
+    const size_t pos = table.find(key);
+    if (pos == std::string_view::npos) return false;
+    size_t i = pos + key.size();
+    uint32_t value = 0;
+    for (int n = 0; n < 6; ++n) {
+        if (i >= table.size()) return false;
+        const int h = HexNibble(table[i++]);
+        if (h < 0) return false;
+        value = (value << 4) | static_cast<uint32_t>(h);
+    }
+    rgb = value;
+    return true;
+}
+
+// RFC 7986 COLOR is a CSS color. CSS names win over the Google palette where they
+// differ (tomato, lavender). Palette names still work for peacock and the rest.
+inline bool ParseCssColor(std::string_view text, uint32_t& rgb) {
+    text = TrimColorText(text);
+    if (text.empty()) return false;
+    if (ParseRgbFunc(text, rgb)) return true;
+    if (text.front() == '#') return ParseHexColor(text, rgb);
+    if (LookupNamedColor(kCssColorNames, text, rgb)) return true;
+    if (LookupNamedColor(kGoogleColorNames, text, rgb)) return true;
+    return ParseHexColor(text, rgb);
+}
+
+// The |color suffix on an iCal URL. Google's names win, so |tomato is #D50000
+// rather than the CSS tomato.
+inline bool ParseFeedColor(std::string_view text, uint32_t& rgb) {
+    text = TrimColorText(text);
+    if (text.empty()) return false;
+    if (ParseRgbFunc(text, rgb)) return true;
+    if (!text.empty() && text.front() == '#') return ParseHexColor(text, rgb);
+    if (LookupNamedColor(kGoogleColorNames, text, rgb)) return true;
+    if (LookupNamedColor(kCssColorNames, text, rgb)) return true;
+    return ParseHexColor(text, rgb);
+}
+
+inline void AssignCalendarColor(bool& has, int& rank, uint32_t& rgb, const std::string& name,
+                                std::string_view value) {
+    int next = 0;
+    if (name == "COLOR") next = 3;
+    else if (name == "X-APPLE-CALENDAR-COLOR") next = 2;
+    else if (name == "X-OUTLOOK-COLOR") next = 1;
+    else return;
+    if (next < rank) return;
+    uint32_t parsed = 0;
+    if (!ParseCssColor(value, parsed)) return;
+    has = true;
+    rank = next;
+    rgb = parsed;
+}
 
 struct ExpandWindow {
     int64_t startUtc = 0;
@@ -1393,6 +1601,9 @@ inline std::vector<When> ExdatesFromProperty(const Property& prop) {
 struct ParsedFeed {
     std::map<std::string, Zone> zones;
     std::vector<Event> events;
+    bool hasColor = false;
+    int colorRank = 0;
+    uint32_t colorRgb = 0;
 };
 
 inline const Zone* FindZone(const std::map<std::string, Zone>& zones, const std::string& tzid) {
@@ -1629,7 +1840,11 @@ inline ParsedFeed ParseFeed(std::string_view ics) {
             } else if (prop.name == "RECURRENCE-ID") {
                 event.recurrenceId = WhenFromProperty(prop);
                 event.hasRecurrenceId = event.recurrenceId.valid;
+            } else {
+                AssignCalendarColor(event.hasColor, event.colorRank, event.colorRgb, prop.name, prop.value);
             }
+        } else if (mode == Mode::Top) {
+            AssignCalendarColor(feed.hasColor, feed.colorRank, feed.colorRgb, prop.name, prop.value);
         } else if (mode == Mode::Zone) {
             if (prop.name == "TZID") {
                 std::string id = prop.value;
@@ -1702,6 +1917,8 @@ inline Occurrence MakeAllDay(const Event& ev, const Civil& start, int days) {
     occ.spanEndDay = end.day;
     occ.startUtc = CivilToUnixLocal(Civil{start.year, start.month, start.day, 0, 0, 0});
     occ.endUtc = CivilToUnixLocal(end);
+    occ.hasColor = ev.hasColor;
+    occ.colorRgb = ev.colorRgb;
     return occ;
 }
 
@@ -1712,8 +1929,17 @@ inline Occurrence MakeTimed(const Event& ev, int64_t startUtc, int64_t durationS
     occ.allDay = false;
     occ.startUtc = startUtc;
     occ.endUtc = startUtc + (durationSec > 0 ? durationSec : 0);
+    occ.hasColor = ev.hasColor;
+    occ.colorRgb = ev.colorRgb;
     SetSpanFromUtc(occ);
     return occ;
+}
+
+inline void FillCalendarColor(Occurrence& occ, const ParsedFeed& feed) {
+    if (!occ.hasColor && feed.hasColor) {
+        occ.hasColor = true;
+        occ.colorRgb = feed.colorRgb;
+    }
 }
 
 inline bool DatesOverlap(int sY, int sM, int sD, int eY, int eM, int eD, const ExpandWindow& w) {
@@ -1838,6 +2064,7 @@ inline void ExpandEvent(const Event& ev, const ParsedFeed& feed, const std::set<
             excluded = skipUtc.count(utc) > 0 || skipDate.count(PackDate(wall)) > 0;
             if (!excluded && InstantsOverlap(utc, utc + duration, window)) {
                 out.push_back(MakeTimed(ev, utc, duration));
+                FillCalendarColor(out.back(), feed);
             }
             if (rule.count == 0 && !rule.hasUntil && utc >= window.endUtc) stopped = true;
             if (emitted > 8000) stopped = true;
@@ -1846,6 +2073,7 @@ inline void ExpandEvent(const Event& ev, const ParsedFeed& feed, const std::set<
 
         if (!excluded) {
             Occurrence occ = MakeAllDay(ev, wall, dayLength);
+            FillCalendarColor(occ, feed);
             if (DatesOverlap(occ.spanYear, occ.spanMonth, occ.spanDay, occ.spanEndYear, occ.spanEndMonth,
                              occ.spanEndDay, window)) {
                 out.push_back(std::move(occ));
@@ -1948,6 +2176,7 @@ inline void AppendSingle(const Event& ev, const ParsedFeed& feed, const ExpandWi
     if (ev.start.dateOnly) {
         const int days = AllDayLengthOf(ev, feed.zones);
         Occurrence occ = MakeAllDay(ev, ev.start.civil, days);
+        FillCalendarColor(occ, feed);
         if (DatesOverlap(occ.spanYear, occ.spanMonth, occ.spanDay, occ.spanEndYear, occ.spanEndMonth,
                          occ.spanEndDay, window)) {
             out.push_back(std::move(occ));
@@ -1958,6 +2187,7 @@ inline void AppendSingle(const Event& ev, const ParsedFeed& feed, const ExpandWi
     const int64_t duration = TimedDurationOf(ev, feed.zones);
     if (InstantsOverlap(start, start + duration, window)) {
         out.push_back(MakeTimed(ev, start, duration));
+        FillCalendarColor(out.back(), feed);
     }
 }
 
@@ -2037,25 +2267,25 @@ inline std::string HeadsUpLabel(const std::vector<Occurrence>& events, int64_t n
 struct AgendaMetrics {
     static constexpr float kPanelW = 440.0f;
     static constexpr float kPanelH = 300.0f;
-    static constexpr float kPadX = 18.0f;
-    static constexpr float kHeaderTop = 10.0f;
-    static constexpr float kHeaderH = 28.0f;
-    static constexpr float kListTop = 48.0f;
-    static constexpr float kListBottom = 14.0f;
-    static constexpr float kDayHeaderH = 24.0f;
-    static constexpr float kDayGap = 10.0f;
-    static constexpr float kRowH = 36.0f;
-    static constexpr float kRowHLoc = 50.0f;
-    static constexpr float kRowGap = 4.0f;
-    static constexpr float kTimeColW = 122.0f;
-    static constexpr float kFade = 18.0f;
+    static constexpr float kPadX = 16.0f;
+    static constexpr float kHeaderTop = 8.0f;
+    static constexpr float kHeaderH = 22.0f;
+    static constexpr float kListTop = 36.0f;
+    static constexpr float kListBottom = 10.0f;
+    static constexpr float kDayHeaderH = 18.0f;
+    static constexpr float kDayGap = 6.0f;
+    static constexpr float kRowH = 26.0f;
+    static constexpr float kRowHLoc = 38.0f;
+    static constexpr float kRowGap = 2.0f;
+    static constexpr float kTimeColW = 100.0f;
+    static constexpr float kFade = 16.0f;
     static constexpr float kDotReserve = 18.0f;
-    static constexpr float kTitlePx = 16.5f;
-    static constexpr float kTimePx = 15.0f;
-    static constexpr float kMetaPx = 12.0f;
-    static constexpr float kDayPx = 13.5f;
-    static constexpr float kToggleW = 68.0f;
-    static constexpr float kToggleH = 22.0f;
+    static constexpr float kTitlePx = 13.25f;
+    static constexpr float kTimePx = 12.0f;
+    static constexpr float kMetaPx = 11.0f;
+    static constexpr float kDayPx = 12.0f;
+    static constexpr float kToggleW = 64.0f;
+    static constexpr float kToggleH = 18.0f;
 };
 
 enum class AgendaRole { Timed, AllDay, Deadline, Empty };
@@ -3235,6 +3465,7 @@ struct GcalEvent {
     int spanEndYear = 0;  // exclusive
     int spanEndMonth = 0;
     int spanEndDay = 0;
+    uint32_t colorRgb = 0x039BE5;  // resolved calendar color, 0xRRGGBB
 };
 
 struct GcalSnapshot {
@@ -3361,6 +3592,20 @@ std::atomic<float> g_gcalToggleT{0.0f};
 std::atomic<float> g_gcalToggleR{0.0f};
 std::atomic<float> g_gcalToggleB{0.0f};
 std::atomic<bool> g_gcalToggleValid{false};
+// Month-grid geometry, in content pixels relative to the island, so a hover can
+// name the day under the cursor. Invalid while the agenda is showing.
+std::atomic<bool> g_gcalGridValid{false};
+std::atomic<float> g_gcalGridL{0.0f};
+std::atomic<float> g_gcalGridT{0.0f};
+std::atomic<float> g_gcalColW{0.0f};
+std::atomic<float> g_gcalRowH{0.0f};
+std::atomic<int> g_gcalGridStart{0};
+std::atomic<int> g_gcalGridDays{0};
+std::atomic<int> g_gcalGridYear{0};
+std::atomic<int> g_gcalGridMonth{0};
+std::atomic<int> g_gcalHoverDay{-1};
+std::atomic<int> g_gcalHoverYear{0};
+std::atomic<int> g_gcalHoverMonth{0};
 HANDLE g_lyricsThread = nullptr;
 HANDLE g_notificationThread = nullptr;
 HANDLE g_bluetoothThread = nullptr;
@@ -3648,6 +3893,7 @@ bool GcalAgendaSelected(const Settings& settings, const GcalSnapshot* snap) {
 void GcalToggleView() {
     g_gcalShowMonth.store(!g_gcalShowMonth.load(std::memory_order_relaxed), std::memory_order_relaxed);
     g_gcalScroll.store(0.0f, std::memory_order_relaxed);
+    g_gcalHoverDay.store(-1, std::memory_order_relaxed);
     g_layoutDirty = true;
 }
 
@@ -3682,6 +3928,30 @@ bool GcalListHitTest(const MediaContentPoint& pt) {
            pt.x <= pt.width - di_ics::AgendaMetrics::kDotReserve &&
            pt.y >= di_ics::AgendaMetrics::kListTop &&
            pt.y <= pt.height - di_ics::AgendaMetrics::kListBottom;
+}
+
+// Day number under the cursor, or -1. Content point is relative to the island.
+int GcalDayAtPoint(const MediaContentPoint& pt) {
+    if (!pt.valid || !g_gcalGridValid.load(std::memory_order_relaxed)) return -1;
+    if (pt.height <= MediaLayout::kExpandedMinHeight) return -1;
+    const float colW = g_gcalColW.load(std::memory_order_relaxed);
+    const float rowH = g_gcalRowH.load(std::memory_order_relaxed);
+    if (colW < 1.0f || rowH < 1.0f) return -1;
+    const float x = pt.x - g_gcalGridL.load(std::memory_order_relaxed);
+    const float y = pt.y - g_gcalGridT.load(std::memory_order_relaxed);
+    if (x < 0.0f || y < 0.0f) return -1;
+    const int col = static_cast<int>(x / colW);
+    const int row = static_cast<int>(y / rowH);
+    if (col < 0 || col > 6 || row < 0 || row > 5) return -1;
+    const int day = row * 7 + col - g_gcalGridStart.load(std::memory_order_relaxed) + 1;
+    const int days = g_gcalGridDays.load(std::memory_order_relaxed);
+    if (day < 1 || day > days) return -1;
+    return day;
+}
+
+D2D1_COLOR_F GcalRgb(uint32_t rgb, float alpha) {
+    return D2D1::ColorF(((rgb >> 16) & 255) / 255.0f, ((rgb >> 8) & 255) / 255.0f,
+                        (rgb & 255) / 255.0f, alpha);
 }
 
 int FileTrayTabIndex(const Settings& settings) {
@@ -8970,8 +9240,15 @@ std::wstring Utf8ToWideFlat(std::string_view text) {
     return out;
 }
 
-std::vector<std::wstring> SplitIcsUrls(const std::wstring& raw) {
-    std::vector<std::wstring> urls;
+struct IcsFeedSpec {
+    std::wstring url;
+    uint32_t colorRgb = 0x039BE5;
+};
+
+// "url", "url|peacock", or "url|#039BE5". A suffix that is not a color stays
+// part of the URL. Feeds with no color walk Google's palette from peacock.
+std::vector<IcsFeedSpec> SplitIcsUrls(const std::wstring& raw) {
+    std::vector<IcsFeedSpec> feeds;
     std::wstring cur;
     auto flush = [&]() {
         const size_t begin = cur.find_first_not_of(L" \t\r\n\"'");
@@ -8982,14 +9259,40 @@ std::vector<std::wstring> SplitIcsUrls(const std::wstring& raw) {
         const size_t end = cur.find_last_not_of(L" \t\r\n\"'");
         std::wstring url = cur.substr(begin, end - begin + 1);
         cur.clear();
-        if (url.size() >= 8) urls.push_back(std::move(url));
+        bool explicitColor = false;
+        uint32_t color = 0;
+        const size_t bar = url.rfind(L'|');
+        if (bar != std::wstring::npos && bar > 0 && bar + 1 < url.size()) {
+            std::string suffix;
+            suffix.reserve(url.size() - bar - 1);
+            bool ascii = true;
+            for (size_t i = bar + 1; i < url.size(); ++i) {
+                const wchar_t ch = url[i];
+                if (ch < 32 || ch > 126) {
+                    ascii = false;
+                    break;
+                }
+                suffix.push_back(static_cast<char>(ch));
+            }
+            if (ascii && di_ics::ParseFeedColor(suffix, color)) {
+                explicitColor = true;
+                size_t keep = bar;
+                while (keep > 0 && (url[keep - 1] == L' ' || url[keep - 1] == L'\t')) --keep;
+                url.resize(keep);
+            }
+        }
+        if (url.size() < 8) return;
+        IcsFeedSpec spec;
+        spec.url = std::move(url);
+        spec.colorRgb = explicitColor ? color : di_ics::FeedPaletteColor(static_cast<int>(feeds.size()));
+        feeds.push_back(std::move(spec));
     };
     for (wchar_t ch : raw) {
         if (ch == L',' || ch == L'\n' || ch == L'\r') flush();
         else cur.push_back(ch);
     }
     flush();
-    return urls;
+    return feeds;
 }
 
 bool GcalCoversDay(const GcalSnapshot* snap, int year, int month, int day) {
@@ -9110,16 +9413,25 @@ std::string HttpGetAbsoluteUrl(const std::wstring& url) {
     return body;
 }
 
-void PublishGcalSnapshot(const std::vector<std::pair<std::wstring, std::string>>& feeds) {
-    if (feeds.empty()) {
+void PublishGcalSnapshot(const std::vector<IcsFeedSpec>& specs,
+                         const std::vector<std::pair<std::wstring, std::string>>& cache) {
+    if (specs.empty()) {
         std::lock_guard lock(g_stateMutex);
         g_state.gcal.reset();
         return;
     }
     auto snap = std::make_shared<GcalSnapshot>();
     const di_ics::ExpandWindow window = di_ics::WindowCoveringLocal(di_ics::UnixNow(), 70);
-    for (const auto& feed : feeds) {
-        for (const di_ics::Occurrence& occ : di_ics::ExpandCalendar(feed.second, window)) {
+    for (const IcsFeedSpec& spec : specs) {
+        const std::string* body = nullptr;
+        for (const auto& item : cache) {
+            if (item.first == spec.url) {
+                body = &item.second;
+                break;
+            }
+        }
+        if (!body) continue;
+        for (const di_ics::Occurrence& occ : di_ics::ExpandCalendar(*body, window)) {
             GcalEvent ev;
             ev.summary = Utf8ToWideFlat(occ.summary);
             ev.location = Utf8ToWideFlat(occ.location);
@@ -9137,6 +9449,7 @@ void PublishGcalSnapshot(const std::vector<std::pair<std::wstring, std::string>>
             ev.spanEndYear = occ.spanEndYear;
             ev.spanEndMonth = occ.spanEndMonth;
             ev.spanEndDay = occ.spanEndDay;
+            ev.colorRgb = occ.hasColor ? occ.colorRgb : spec.colorRgb;
             snap->events.push_back(std::move(ev));
         }
     }
@@ -9169,8 +9482,8 @@ DWORD WINAPI GcalThreadProc(void*) {
             raw = g_settings.gcalIcsUrls;
             refreshMin = g_settings.gcalRefreshMinutes;
         }
-        const std::vector<std::wstring> urls = SplitIcsUrls(raw);
-        if (urls.empty()) {
+        const std::vector<IcsFeedSpec> specs = SplitIcsUrls(raw);
+        if (specs.empty()) {
             cache.clear();
             {
                 std::lock_guard lock(g_stateMutex);
@@ -9181,29 +9494,32 @@ DWORD WINAPI GcalThreadProc(void*) {
         }
 
         cache.erase(std::remove_if(cache.begin(), cache.end(), [&](const auto& item) {
-                        return std::find(urls.begin(), urls.end(), item.first) == urls.end();
+                        for (const IcsFeedSpec& spec : specs) {
+                            if (spec.url == item.first) return false;
+                        }
+                        return true;
                     }),
                     cache.end());
 
         bool anyFresh = false;
-        for (const std::wstring& url : urls) {
+        for (const IcsFeedSpec& spec : specs) {
             if (WaitForSingleObject(g_stopEvent, 0) != WAIT_TIMEOUT) break;
-            const std::string body = HttpGetAbsoluteUrl(url);
+            const std::string body = HttpGetAbsoluteUrl(spec.url);
             if (body.empty()) continue;
             anyFresh = true;
             bool replaced = false;
             for (auto& item : cache) {
-                if (item.first == url) {
+                if (item.first == spec.url) {
                     item.second = body;
                     replaced = true;
                     break;
                 }
             }
-            if (!replaced) cache.emplace_back(url, body);
+            if (!replaced) cache.emplace_back(spec.url, body);
         }
 
         if (!cache.empty()) {
-            PublishGcalSnapshot(cache);
+            PublishGcalSnapshot(specs, cache);
         } else {
             // Every configured URL was dropped or has never loaded. Don't keep
             // showing a calendar the settings no longer point at.
@@ -15533,7 +15849,7 @@ class Renderer {
                      DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL,
                      DWRITE_FONT_STRETCH_NORMAL, di_ics::AgendaMetrics::kMetaPx * ts, agendaMetaFormat_);
         createFormat(mainFamily, defaultDisplay,
-                     DWRITE_FONT_WEIGHT_BOLD, DWRITE_FONT_STYLE_NORMAL,
+                     DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL,
                      DWRITE_FONT_STRETCH_NORMAL, di_ics::AgendaMetrics::kDayPx * ts, agendaDayFormat_);
 
         usingFluentIcons_ = false;
@@ -16611,16 +16927,30 @@ class Renderer {
             if (line.eventIndex < 0 || line.eventIndex >= static_cast<int>(gcal.events.size())) continue;
             const GcalEvent& ev = gcal.events[static_cast<size_t>(line.eventIndex)];
             const float fade = line.past ? 0.38f : 1.0f;
+            const float titleBand = ev.location.empty() ? line.h : 16.0f;
+            const float timeBottom = top + titleBand;
+            const float timeInset = 8.0f;
 
-            if (line.happening && accent) {
-                D2D1_COLOR_F wash = material_.accentSoft;
-                wash.a *= fade * settingsOpacity_;
+            if (line.happening) {
+                D2D1_COLOR_F wash = GcalRgb(ev.colorRgb, 0.22f * fade * settingsOpacity_);
                 ComPtr<ID2D1SolidColorBrush> washBrush;
                 if (SUCCEEDED(target_->CreateSolidColorBrush(wash, &washBrush)) && washBrush) {
                     target_->FillRoundedRectangle(
                         D2D1::RoundedRect(D2D1::RectF(rect.left + 8.0f, top + 1.0f, titleRight, top + line.h - 1.0f),
-                                          8.0f, 8.0f),
+                                          6.0f, 6.0f),
                         washBrush.Get());
+                }
+            }
+
+            {
+                D2D1_COLOR_F bar = GcalRgb(ev.colorRgb, fade * settingsOpacity_);
+                ComPtr<ID2D1SolidColorBrush> barBrush;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(bar, &barBrush)) && barBrush) {
+                    const float barH = 12.0f;
+                    const float barTop = top + (titleBand - barH) * 0.5f;
+                    target_->FillRoundedRectangle(
+                        D2D1::RoundedRect(D2D1::RectF(timeLeft, barTop, timeLeft + 3.0f, barTop + barH), 1.5f, 1.5f),
+                        barBrush.Get());
                 }
             }
 
@@ -16640,46 +16970,22 @@ class Renderer {
                 }
             }
 
-            const bool accentTime = line.role == di_ics::AgendaRole::Deadline || line.happening;
-            const float titleBand = ev.location.empty() ? line.h : 22.0f;
-            const float timeBottom = top + titleBand;
-            if (line.role == di_ics::AgendaRole::Deadline && accent) {
-                D2D1_COLOR_F bar = material_.accent;
-                bar.a *= fade * settingsOpacity_;
-                ComPtr<ID2D1SolidColorBrush> barBrush;
-                if (SUCCEEDED(target_->CreateSolidColorBrush(bar, &barBrush)) && barBrush) {
-                    const float barH = 14.0f;
-                    const float barTop = top + (titleBand - barH) * 0.5f;
-                    target_->FillRoundedRectangle(
-                        D2D1::RoundedRect(D2D1::RectF(timeLeft, barTop, timeLeft + 3.0f, barTop + barH), 1.5f, 1.5f),
-                        barBrush.Get());
-                }
-            }
-
-            ID2D1Brush* timeBrush = textBrush_.Get();
-            if (accentTime && accent) {
-                D2D1_COLOR_F c = material_.accent;
-                c.a *= fade * settingsOpacity_;
+            const bool coloredTime = line.role == di_ics::AgendaRole::Deadline || line.happening;
+            const D2D1_RECT_F timeRect = D2D1::RectF(timeLeft + timeInset, top, timeLeft + M::kTimeColW, timeBottom);
+            bool drewTime = false;
+            if (coloredTime && timeFmt) {
+                D2D1_COLOR_F c = GcalRgb(ev.colorRgb, fade * settingsOpacity_);
                 ComPtr<ID2D1SolidColorBrush> timeColor;
-                if (SUCCEEDED(target_->CreateSolidColorBrush(c, &timeColor)) && timeColor && timeFmt) {
-                    const float inset = line.role == di_ics::AgendaRole::Deadline ? 8.0f : 0.0f;
-                    target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), timeFmt,
-                                       D2D1::RectF(timeLeft + inset, top, timeLeft + M::kTimeColW, timeBottom),
+                if (SUCCEEDED(target_->CreateSolidColorBrush(c, &timeColor)) && timeColor) {
+                    target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), timeFmt, timeRect,
                                        timeColor.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                    timeBrush = nullptr;
+                    drewTime = true;
                 }
             }
-            if (timeBrush && timeFmt) {
-                if (line.role == di_ics::AgendaRole::AllDay || !accentTime) {
-                    mutedBrush_->SetOpacity(0.78f * fade);
-                    timeBrush = mutedBrush_.Get();
-                } else {
-                    textBrush_->SetOpacity(0.94f * fade);
-                }
-                target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), timeFmt,
-                                   D2D1::RectF(timeLeft + (line.role == di_ics::AgendaRole::Deadline ? 8.0f : 0.0f),
-                                               top, timeLeft + M::kTimeColW, timeBottom),
-                                   timeBrush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            if (!drewTime && timeFmt) {
+                mutedBrush_->SetOpacity(0.78f * fade);
+                target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), timeFmt, timeRect,
+                                   mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
 
             textBrush_->SetOpacity(0.96f * fade);
@@ -16691,7 +16997,7 @@ class Renderer {
             if (!ev.location.empty() && metaFmt) {
                 mutedBrush_->SetOpacity(0.62f * fade);
                 target_->DrawTextW(ev.location.c_str(), static_cast<UINT32>(ev.location.size()), metaFmt,
-                                   D2D1::RectF(titleLeft, top + 22.0f, titleRight, top + line.h),
+                                   D2D1::RectF(titleLeft, top + 16.0f, titleRight, top + line.h),
                                    mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
         }
@@ -16802,10 +17108,12 @@ class Renderer {
         const GcalSnapshot* gcalSnap = state.gcal.get();
         const bool hasFeed = gcalSnap && gcalSnap->loaded && !settings.gcalIcsUrls.empty();
         if (hasFeed && !g_gcalShowMonth.load(std::memory_order_relaxed)) {
+            g_gcalGridValid.store(false, std::memory_order_relaxed);
             DrawCalendarAgendaList(*gcalSnap, rect, settings, local, accent.Get());
             return;
         }
         g_gcalAgendaOn.store(false, std::memory_order_relaxed);
+        g_gcalGridValid.store(false, std::memory_order_relaxed);
 
         float gridStart = rect.left + 134.0f * scale;
         float colW = 28.0f * scale;
@@ -16931,6 +17239,42 @@ class Renderer {
         // the digits once the rows got shorter.
         const float markerR = std::min(colW, rowH) * 0.5f - 1.5f * scale;
 
+        if (hasFeed) {
+            g_gcalGridL.store(gridStart - rect.left, std::memory_order_relaxed);
+            g_gcalGridT.store(datesTop - rect.top, std::memory_order_relaxed);
+            g_gcalColW.store(colW, std::memory_order_relaxed);
+            g_gcalRowH.store(rowH, std::memory_order_relaxed);
+            g_gcalGridStart.store(startDayIdx, std::memory_order_relaxed);
+            g_gcalGridDays.store(monthDays, std::memory_order_relaxed);
+            g_gcalGridYear.store(local.wYear, std::memory_order_relaxed);
+            g_gcalGridMonth.store(local.wMonth, std::memory_order_relaxed);
+            g_gcalGridValid.store(true, std::memory_order_relaxed);
+        }
+
+        const int hoverDay = g_gcalHoverDay.load(std::memory_order_relaxed);
+        const bool hoverThisMonth = hasFeed && hoverDay >= 1 &&
+            g_gcalHoverYear.load(std::memory_order_relaxed) == local.wYear &&
+            g_gcalHoverMonth.load(std::memory_order_relaxed) == static_cast<int>(local.wMonth);
+
+        auto colorsOnDay = [&](int day, uint32_t* out, int cap) {
+            int count = 0;
+            if (!gcalSnap || cap < 1) return 0;
+            const int cur = local.wYear * 10000 + local.wMonth * 100 + day;
+            for (const GcalEvent& ev : gcalSnap->events) {
+                const int start = ev.spanYear * 10000 + ev.spanMonth * 100 + ev.spanDay;
+                const int end = ev.spanEndYear * 10000 + ev.spanEndMonth * 100 + ev.spanEndDay;
+                if (cur < start || cur >= end) continue;
+                bool seen = false;
+                for (int i = 0; i < count; ++i) {
+                    if (out[i] == ev.colorRgb) seen = true;
+                }
+                if (seen) continue;
+                out[count++] = ev.colorRgb;
+                if (count >= cap) break;
+            }
+            return count;
+        };
+
         int row = 0;
         int col = startDayIdx;
         for (int d = 1; d <= monthDays; ++d) {
@@ -16938,7 +17282,19 @@ class Renderer {
                                                  gridStart + (col + 1) * colW, datesTop + (row + 1) * rowH);
             const std::wstring dayText = std::to_wstring(d);
             const int weekday = (firstDay + col) % 7;
-            const bool hasEvent = hasFeed && GcalCoversDay(gcalSnap, local.wYear, local.wMonth, d);
+            uint32_t dayColors[3] = {};
+            const int dayColorCount = hasFeed ? colorsOnDay(d, dayColors, 3) : 0;
+            const bool hasEvent = dayColorCount > 0;
+            if (hoverThisMonth && d == hoverDay && d != local.wDay) {
+                ComPtr<ID2D1SolidColorBrush> hoverBrush;
+                D2D1_COLOR_F hover = material_.textPrimary;
+                hover.a = 0.08f * settingsOpacity_;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(hover, &hoverBrush)) && hoverBrush) {
+                    const D2D1_RECT_F hot = D2D1::RectF(cell.left + 1.0f, cell.top + 1.0f,
+                                                       cell.right - 1.0f, cell.bottom - 1.0f);
+                    target_->FillRoundedRectangle(D2D1::RoundedRect(hot, 5.0f, 5.0f), hoverBrush.Get());
+                }
+            }
             // Nudge the figure up so the event dot under it doesn't sit on the digit.
             D2D1_RECT_F textCell = cell;
             if (hasEvent && d != local.wDay) {
@@ -16968,26 +17324,154 @@ class Renderer {
                                    textCell, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
             }
 
-            if (hasEvent && accent) {
+            if (hasEvent) {
                 const float dotR = std::max(1.15f * scale, std::min(1.7f * scale, rowH * 0.09f));
                 const float cx = cell.left + colW * 0.5f;
                 const float cy = cell.top + rowH * 0.5f;
-                if (d == local.wDay) {
-                    // The accent disc fills the cell. The dot sits in the empty
-                    // lower-right of that disc, in the primary text colour.
-                    textBrush_->SetOpacity(1.0f);
-                    target_->FillEllipse(
-                        D2D1::Ellipse(D2D1::Point2F(cx + markerR * 0.42f, cy + markerR * 0.42f),
-                                      dotR, dotR),
-                        textBrush_.Get());
-                } else {
-                    target_->FillEllipse(
-                        D2D1::Ellipse(D2D1::Point2F(cx, cell.bottom - dotR - 0.5f * scale), dotR, dotR),
-                        accent.Get());
+                const float gap = dotR * 2.6f;
+                const float span = (dayColorCount - 1) * gap;
+                const float y = (d == local.wDay) ? cy + markerR * 0.52f : cell.bottom - dotR - 0.6f * scale;
+                const float x0 = ((d == local.wDay) ? cx + markerR * 0.08f : cx) - span * 0.5f;
+                for (int i = 0; i < dayColorCount; ++i) {
+                    ComPtr<ID2D1SolidColorBrush> dotBrush;
+                    if (FAILED(target_->CreateSolidColorBrush(GcalRgb(dayColors[i], settingsOpacity_), &dotBrush)) ||
+                        !dotBrush) {
+                        continue;
+                    }
+                    const D2D1_ELLIPSE dot = D2D1::Ellipse(D2D1::Point2F(x0 + i * gap, y), dotR, dotR);
+                    if (d == local.wDay) {
+                        // The day disc is the accent fill. Ring the event color so
+                        // a blue event still reads on a blue today.
+                        textBrush_->SetOpacity(1.0f);
+                        target_->FillEllipse(dot, textBrush_.Get());
+                        target_->FillEllipse(
+                            D2D1::Ellipse(dot.point, std::max(0.6f, dotR - 0.7f), std::max(0.6f, dotR - 0.7f)),
+                            dotBrush.Get());
+                    } else {
+                        target_->FillEllipse(dot, dotBrush.Get());
+                    }
                 }
             }
 
             if (++col > 6) { col = 0; ++row; }
+        }
+
+        if (hoverThisMonth && gcalSnap) {
+            std::vector<const GcalEvent*> items;
+            const int cur = local.wYear * 10000 + static_cast<int>(local.wMonth) * 100 + hoverDay;
+            for (const GcalEvent& ev : gcalSnap->events) {
+                const int start = ev.spanYear * 10000 + ev.spanMonth * 100 + ev.spanDay;
+                const int end = ev.spanEndYear * 10000 + ev.spanEndMonth * 100 + ev.spanEndDay;
+                if (cur >= start && cur < end) items.push_back(&ev);
+            }
+            if (!items.empty()) {
+                const int index = hoverDay - 1 + startDayIdx;
+                const int hcol = index % 7;
+                const int hrow = index / 7;
+                const D2D1_RECT_F hot = D2D1::RectF(gridStart + hcol * colW, datesTop + hrow * rowH,
+                                                   gridStart + (hcol + 1) * colW, datesTop + (hrow + 1) * rowH);
+                constexpr float kRow = 16.0f;
+                constexpr float kPad = 7.0f;
+                constexpr float kTimeW = 78.0f;
+                const float maxH = std::max(kRow + kPad * 2.0f, (rect.bottom - rect.top) - 12.0f);
+                int maxRows = static_cast<int>((maxH - kPad * 2.0f) / kRow);
+                if (maxRows < 1) maxRows = 1;
+                int shown = static_cast<int>(items.size());
+                int extra = 0;
+                if (shown > maxRows) {
+                    shown = std::max(1, maxRows - 1);
+                    extra = static_cast<int>(items.size()) - shown;
+                }
+                const float popH = kPad * 2.0f + (shown + (extra > 0 ? 1 : 0)) * kRow;
+                const float popW = std::min(206.0f, (rect.right - rect.left) - 12.0f);
+                float popX = hot.right + 4.0f;
+                if (popX + popW > rect.right - 6.0f) popX = hot.left - 4.0f - popW;
+                if (popX < rect.left + 6.0f) popX = rect.left + 6.0f;
+                if (popX + popW > rect.right - 6.0f) popX = rect.right - 6.0f - popW;
+                float popY = hot.top - 2.0f;
+                if (popY + popH > rect.bottom - 6.0f) popY = rect.bottom - 6.0f - popH;
+                if (popY < rect.top + 6.0f) popY = rect.top + 6.0f;
+                const D2D1_RECT_F pop = D2D1::RectF(popX, popY, popX + popW, popY + popH);
+
+                D2D1_COLOR_F card = material_.base;
+                card.a = std::max(card.a, 0.94f) * settingsOpacity_;
+                ComPtr<ID2D1SolidColorBrush> cardBrush;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(card, &cardBrush)) && cardBrush) {
+                    target_->FillRoundedRectangle(D2D1::RoundedRect(pop, 8.0f, 8.0f), cardBrush.Get());
+                }
+                ComPtr<ID2D1SolidColorBrush> edgeBrush;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(
+                        WithAlpha(material_.hairline, material_.hairline.a * settingsOpacity_), &edgeBrush)) &&
+                    edgeBrush) {
+                    target_->DrawRoundedRectangle(D2D1::RoundedRect(pop, 8.0f, 8.0f), edgeBrush.Get(), 1.0f);
+                }
+
+                IDWriteTextFormat* rowFmt = smallTextFormat_ ? smallTextFormat_.Get() : agendaMetaFormat_.Get();
+                const float textTop = pop.top + kPad;
+                const float dotX = pop.left + kPad + 3.0f;
+                const float timeX = dotX + 8.0f;
+                const float titleX = timeX + kTimeW;
+                const float titleW = std::max(12.0f, pop.right - kPad - titleX);
+                for (int i = 0; i < shown; ++i) {
+                    const GcalEvent& ev = *items[static_cast<size_t>(i)];
+                    const float y = textTop + i * kRow;
+                    ComPtr<ID2D1SolidColorBrush> dotBrush;
+                    if (SUCCEEDED(target_->CreateSolidColorBrush(GcalRgb(ev.colorRgb, settingsOpacity_), &dotBrush)) &&
+                        dotBrush) {
+                        target_->FillEllipse(D2D1::Ellipse(D2D1::Point2F(dotX, y + kRow * 0.5f), 3.0f, 3.0f),
+                                             dotBrush.Get());
+                    }
+                    di_ics::AgendaInput mark;
+                    mark.allDay = ev.allDay;
+                    mark.startUtc = ev.startUtc;
+                    mark.endUtc = ev.endUtc;
+                    mark.hour = ev.hour;
+                    mark.minute = ev.minute;
+                    const bool due = di_ics::AgendaIsDeadline(mark);
+                    std::wstring when = Loc(L"All day");
+                    if (!ev.allDay) {
+                        SYSTEMTIME st{};
+                        st.wYear = static_cast<WORD>(ev.year);
+                        st.wMonth = static_cast<WORD>(ev.month);
+                        st.wDay = static_cast<WORD>(ev.day);
+                        st.wHour = static_cast<WORD>(ev.hour);
+                        st.wMinute = static_cast<WORD>(ev.minute);
+                        when = FormatIslandTime(st, settings.clockFollowSystem, settings.use24HourClock, false);
+                        if (due) when = std::wstring(Loc(L"Due")) + L" " + when;
+                    }
+                    if (rowFmt) {
+                        ID2D1Brush* whenBrush = mutedBrush_.Get();
+                        ComPtr<ID2D1SolidColorBrush> dueBrush;
+                        if (due && SUCCEEDED(target_->CreateSolidColorBrush(
+                                       GcalRgb(ev.colorRgb, settingsOpacity_), &dueBrush)) &&
+                            dueBrush) {
+                            whenBrush = dueBrush.Get();
+                        } else {
+                            mutedBrush_->SetOpacity(0.80f);
+                        }
+                        DWRITE_TEXT_METRICS tm{};
+                        ComPtr<IDWriteTextLayout> whenLayout = MakeLineLayout(when, rowFmt, kTimeW - 4.0f, &tm, true);
+                        if (whenLayout) {
+                            target_->DrawTextLayout(D2D1::Point2F(timeX, y + 1.0f), whenLayout.Get(), whenBrush);
+                        }
+                        textBrush_->SetOpacity(0.96f);
+                        ComPtr<IDWriteTextLayout> titleLayout =
+                            MakeLineLayout(ev.summary, rowFmt, titleW, &tm, true);
+                        if (titleLayout) {
+                            target_->DrawTextLayout(D2D1::Point2F(titleX, y + 1.0f), titleLayout.Get(),
+                                                    textBrush_.Get());
+                        }
+                    }
+                }
+                if (extra > 0 && rowFmt) {
+                    mutedBrush_->SetOpacity(0.62f);
+                    const std::wstring more = L"+" + std::to_wstring(extra) + L" more";
+                    const float y = textTop + shown * kRow;
+                    target_->DrawTextW(more.c_str(), static_cast<UINT32>(more.size()), rowFmt,
+                                       D2D1::RectF(timeX, y, pop.right - kPad, y + kRow),
+                                       mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                }
+            }
         }
 
         textBrush_->SetOpacity(0.96f);
@@ -26354,6 +26838,21 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 g_layoutDirty = true;
             }
 
+            int hoverDay = -1;
+            if (currentTab == CalendarTabIndex(g_settings, mediaActive) &&
+                !g_gcalAgendaOn.load(std::memory_order_relaxed)) {
+                hoverDay = GcalDayAtPoint(MediaContentFromClient(xPos, yPos));
+                if (hoverDay > 0) {
+                    g_gcalHoverYear.store(g_gcalGridYear.load(std::memory_order_relaxed),
+                                          std::memory_order_relaxed);
+                    g_gcalHoverMonth.store(g_gcalGridMonth.load(std::memory_order_relaxed),
+                                           std::memory_order_relaxed);
+                }
+            }
+            if (g_gcalHoverDay.exchange(hoverDay) != hoverDay) {
+                g_layoutDirty = true;
+            }
+
             // Pressed on a row and moved past the system drag threshold: pick the file up.
             if (s_trayPressActive) {
                 if (!(wParam & MK_LBUTTON)) {
@@ -26384,6 +26883,9 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 g_layoutDirty = true;
             }
             if (g_hoveredFileTrayAction.exchange(-1) != -1) {
+                g_layoutDirty = true;
+            }
+            if (g_gcalHoverDay.exchange(-1) != -1) {
                 g_layoutDirty = true;
             }
             return 0;
