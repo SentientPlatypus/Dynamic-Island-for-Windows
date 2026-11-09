@@ -4,6 +4,22 @@ All notable changes, enhancements, and bug fixes for **Dynamic Island for Window
 
 ---
 
+## [1.4.0-gcal.5]
+
+The month-hover side panel sizes its width to the day's titles and locations, from 320px up to 460px, and stays inside the monitor. A title that still does not fit at that width wraps to two lines, and the row grows with it, before the text is cut with an ellipsis. The width change uses the same spring as the rest of the panel.
+
+## [1.4.0-gcal.4]
+
+Hovering a day in the month grid opens a side panel beside the island, instead of a card drawn inside it. The panel uses the island's theme, corner radius, blur, and spring animation: it grows out of a small pill, resizes as the day's list gets longer or shorter, and collapses when the pointer leaves. The list is the same agenda style as the calendar tab (color bar, time or All day / Due, title, location) and scrolls when the day has more than will fit.
+
+## [1.4.0-gcal.3]
+
+The agenda type is smaller: 13.25px titles, 12px times, 12px semibold day headers, and tighter rows. Each calendar uses a Google Calendar color — from a COLOR line in the feed, or from `|peacock` / `|#039BE5` after the iCal address. The first calendar defaults to peacock and further calendars walk the palette. That color is the row bar, the month-grid dot, and the tint behind the event happening now. Deadlines still say "Due". Hovering a day in the month grid lists everything on that day.
+
+## [1.4.0-gcal.2]
+
+The calendar tab opens as an agenda once an iCal feed has loaded. Events are grouped under Today, Tomorrow, and a date, with the time on the left and the title on the right. Zero-length items and late-night deadlines read as "Due 11:59 PM". The panel grows to 440×300 content pixels on that tab and the list scrolls. The month grid is still there: click the date card, or the Month chip. With no iCal URL, the original month grid is unchanged.
+
 ## [1.4.0-gcal.1]
 
 Fork of 1.4.0 that installs beside the upstream mod (`dynamic-island-for-windows-gcal`). The calendar tab reads one or more private Google Calendar iCal addresses: days with events are dotted, the next few events are listed beside the month, and the collapsed island can show a heads-up such as `CS 4789 in 12 min` shortly before a timed event. No Google sign-in. A failed refresh keeps the last events that loaded.

@@ -276,6 +276,169 @@ void TestMonthlyCountAndCancelledOverride() {
     Expect(FindUtc(items, {2026, 3, 2, 17, 0, 0}) != nullptr, "first Monday in March is still EST");
 }
 
+di_ics::AgendaInput Timed(int y, int m, int d, int hh, int mm, int durMin, bool location = false) {
+    di_ics::AgendaInput ev;
+    ev.year = y;
+    ev.month = m;
+    ev.day = d;
+    ev.hour = hh;
+    ev.minute = mm;
+    ev.spanYear = y;
+    ev.spanMonth = m;
+    ev.spanDay = d;
+    const di_ics::Civil local{y, m, d, hh, mm, 0};
+    // The test process is America/Los_Angeles, so local wall time is that zone.
+    ev.startUtc = di_ics::CivilToUnixLocal(local);
+    ev.endUtc = ev.startUtc + static_cast<int64_t>(durMin) * 60;
+    const di_ics::Civil end = di_ics::UnixUtcToLocal(ev.endUtc);
+    ev.spanEndYear = end.year;
+    ev.spanEndMonth = end.month;
+    ev.spanEndDay = end.day;
+    if (ev.spanEndYear == y && ev.spanEndMonth == m && ev.spanEndDay == d) {
+        const di_ics::Civil next = di_ics::AddDays(di_ics::Civil{y, m, d, 0, 0, 0}, 1);
+        ev.spanEndYear = next.year;
+        ev.spanEndMonth = next.month;
+        ev.spanEndDay = next.day;
+    }
+    ev.hasLocation = location;
+    return ev;
+}
+
+di_ics::AgendaInput AllDay(int y, int m, int d, int days = 1) {
+    di_ics::AgendaInput ev;
+    ev.allDay = true;
+    ev.year = y;
+    ev.month = m;
+    ev.day = d;
+    ev.spanYear = y;
+    ev.spanMonth = m;
+    ev.spanDay = d;
+    const di_ics::Civil end = di_ics::AddDays(di_ics::Civil{y, m, d, 0, 0, 0}, days);
+    ev.spanEndYear = end.year;
+    ev.spanEndMonth = end.month;
+    ev.spanEndDay = end.day;
+    return ev;
+}
+
+const di_ics::AgendaLine* FindLine(const di_ics::AgendaLayout& layout, int index, bool header) {
+    for (const auto& line : layout.lines) {
+        if (line.dayHeader == header && line.eventIndex == index) return &line;
+    }
+    return nullptr;
+}
+
+void TestAgendaLayout() {
+    // 2026-01-06 18:00 UTC is 10:00 PST. Today is Tuesday Jan 6.
+    const int64_t now = di_ics::CivilToUnixUtc({2026, 1, 6, 18, 0, 0});
+    const di_ics::Civil local = di_ics::UnixUtcToLocal(now);
+    Expect(local.year == 2026 && local.month == 1 && local.day == 6 && local.hour == 10,
+           "agenda anchor is 10:00 on Jan 6 in Los Angeles");
+
+    // 7:10-8:25 already ended. 9:00-11:00 is in progress. 23:59 is a deadline.
+    auto past = Timed(2026, 1, 6, 7, 10, 75);
+    auto nowClass = Timed(2026, 1, 6, 9, 0, 120, true);
+    auto due = Timed(2026, 1, 6, 23, 59, 0);
+    auto tomorrow = AllDay(2026, 1, 7);
+    auto thursday = Timed(2026, 1, 8, 14, 0, 50);
+    auto tooFar = Timed(2026, 1, 13, 9, 0, 60);  // offset 7, outside a 7-day window
+    std::vector<di_ics::AgendaInput> items = {past, nowClass, due, tomorrow, thursday, tooFar};
+
+    const di_ics::AgendaLayout layout = di_ics::BuildAgenda(items, now, 7);
+    Expect(layout.lines.size() == 8, "today header+3, tomorrow header+all-day, Thursday header+class");
+
+    Expect(layout.lines[0].dayHeader && layout.lines[0].dayOffset == 0, "today header first");
+    Expect(layout.lines[1].eventIndex == 0 && layout.lines[1].past &&
+               layout.lines[1].role == di_ics::AgendaRole::Timed,
+           "morning class is past");
+    Expect(layout.lines[2].eventIndex == 1 && layout.lines[2].happening &&
+               layout.lines[2].h == di_ics::AgendaMetrics::kRowHLoc,
+           "9:00 class is happening and keeps a location line");
+    Expect(layout.lines[3].eventIndex == 2 && layout.lines[3].role == di_ics::AgendaRole::Deadline &&
+               !layout.lines[3].past,
+           "23:59 zero-length event is a deadline");
+
+    Expect(layout.lines[4].dayHeader && layout.lines[4].dayOffset == 1, "tomorrow header");
+    Expect(layout.lines[5].role == di_ics::AgendaRole::AllDay && layout.lines[5].eventIndex == 3,
+           "tomorrow all-day");
+    Expect(layout.lines[6].dayHeader && layout.lines[6].day == 8 && layout.lines[6].dayOffset == 2,
+           "empty Wednesday is skipped, Thursday is offset 2");
+    Expect(FindLine(layout, 5, false) == nullptr, "Jan 13 is outside the 7-day window");
+
+    // A normal 23:00 meeting is not a deadline. A 23:50 start is.
+    auto evening = Timed(2026, 1, 6, 23, 0, 40);
+    auto late = Timed(2026, 1, 6, 23, 50, 20);
+    const di_ics::AgendaLayout nights = di_ics::BuildAgenda({evening, late}, now, 1);
+    Expect(nights.lines[1].role == di_ics::AgendaRole::Timed, "23:00 with a duration stays a meeting");
+    Expect(nights.lines[2].role == di_ics::AgendaRole::Deadline, "23:50 start is a deadline");
+
+    const di_ics::AgendaLayout empty = di_ics::BuildAgenda({}, now, 7);
+    Expect(empty.lines.size() == 2, "empty agenda still shows today");
+    Expect(empty.lines[0].dayHeader && empty.lines[0].dayOffset == 0, "empty today header");
+    Expect(empty.lines[1].role == di_ics::AgendaRole::Empty, "today says nothing scheduled");
+    Expect(empty.contentHeight == di_ics::AgendaMetrics::kDayHeaderH + di_ics::AgendaMetrics::kRowH +
+                                      di_ics::AgendaMetrics::kRowGap,
+           "empty today height");
+
+    const float rowTop = di_ics::AgendaMetrics::kDayHeaderH;
+    Expect(layout.lines[1].y == rowTop, "first event sits under the day header");
+    Expect(layout.lines[2].y == rowTop + di_ics::AgendaMetrics::kRowH + di_ics::AgendaMetrics::kRowGap,
+           "location row follows a normal row");
+}
+
+void TestColors() {
+    uint32_t rgb = 0;
+    Expect(di_ics::ParseCssColor("#039BE5", rgb) && rgb == 0x039BE5u, "css hex");
+    Expect(di_ics::ParseCssColor("#39E", rgb) && rgb == 0x3399EEu, "css short hex");
+    Expect(di_ics::ParseCssColor("tomato", rgb) && rgb == 0xFF6347u, "css tomato is not the Google tomato");
+    Expect(di_ics::ParseCssColor("peacock", rgb) && rgb == 0x039BE5u, "palette name falls through for CSS");
+    Expect(di_ics::ParseCssColor("rgb(3, 155, 229)", rgb) && rgb == 0x039BE5u, "css rgb()");
+    Expect(di_ics::ParseFeedColor("tomato", rgb) && rgb == 0xD50000u, "feed tomato is Google's");
+    Expect(di_ics::ParseFeedColor("lavender", rgb) && rgb == 0x7986CBu, "feed lavender is Google's");
+    Expect(di_ics::ParseFeedColor("#0b8043", rgb) && rgb == 0x0B8043u, "feed hex");
+    Expect(di_ics::ParseFeedColor("red", rgb) && rgb == 0xFF0000u, "feed falls through to CSS red");
+    Expect(!di_ics::ParseFeedColor("not-a-color", rgb), "unknown name is not a color");
+    Expect(di_ics::FeedPaletteColor(0) == 0x039BE5u, "first feed is peacock");
+    Expect(di_ics::FeedPaletteColor(1) == 0x3F51B5u, "second feed is blueberry");
+    Expect(di_ics::FeedPaletteColor(11) == 0x039BE5u, "palette wraps to peacock");
+
+    const std::string ics =
+        "BEGIN:VCALENDAR\r\n"
+        "X-APPLE-CALENDAR-COLOR:#33B679\r\n"
+        "COLOR:peacock\r\n"
+        "BEGIN:VEVENT\r\n"
+        "SUMMARY:Inherited\r\n"
+        "DTSTART:20260106T150000Z\r\n"
+        "DTEND:20260106T160000Z\r\n"
+        "END:VEVENT\r\n"
+        "BEGIN:VEVENT\r\n"
+        "SUMMARY:Due\r\n"
+        "COLOR:tomato\r\n"
+        "DTSTART:20260106T235900Z\r\n"
+        "DTEND:20260106T235900Z\r\n"
+        "END:VEVENT\r\n"
+        "BEGIN:VEVENT\r\n"
+        "SUMMARY:Outlook\r\n"
+        "X-OUTLOOK-COLOR:#616161\r\n"
+        "COLOR:#F6BF26\r\n"
+        "DTSTART;VALUE=DATE:20260107\r\n"
+        "END:VEVENT\r\n"
+        "END:VCALENDAR\r\n";
+    const auto items = di_ics::ExpandCalendar(ics, YearWindow2026());
+    const di_ics::Occurrence* inherited = nullptr;
+    const di_ics::Occurrence* due = nullptr;
+    const di_ics::Occurrence* outlook = nullptr;
+    for (const auto& item : items) {
+        if (item.summary == "Inherited") inherited = &item;
+        if (item.summary == "Due") due = &item;
+        if (item.summary == "Outlook") outlook = &item;
+    }
+    Expect(inherited && inherited->hasColor && inherited->colorRgb == 0x039BE5u,
+           "COLOR on the calendar beats X-APPLE and is inherited");
+    Expect(due && due->hasColor && due->colorRgb == 0xFF6347u, "VEVENT COLOR uses the CSS name");
+    Expect(outlook && outlook->hasColor && outlook->colorRgb == 0xF6BF26u,
+           "VEVENT COLOR beats X-OUTLOOK-COLOR");
+}
+
 void TestHeadsUpAndGarbage() {
     const std::string ics =
         "BEGIN:VCALENDAR\r\n" +
@@ -315,6 +478,8 @@ int main() {
     TestFoldingEscapesIntervalAndUntil();
     TestMonthlyCountAndCancelledOverride();
     TestHeadsUpAndGarbage();
+    TestAgendaLayout();
+    TestColors();
 
     if (g_failed != 0) {
         std::cerr << g_failed << " assertion(s) failed\n";

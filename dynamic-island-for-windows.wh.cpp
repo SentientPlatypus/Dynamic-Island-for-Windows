@@ -2,7 +2,7 @@
 // @id              dynamic-island-for-windows-gcal
 // @name            Dynamic Island for Windows (Google Calendar)
 // @description     A living, breathing pill overlay inspired by iPhone's Dynamic Island, with Google Calendar events from a private iCal link. Reacts to media, downloads, clipboard, battery, and more.
-// @version         1.4.0-gcal.1
+// @version         1.4.0-gcal.5
 // @author          Himanshu
 // @github          https://github.com/SentientPlatypus
 // @include         windhawk.exe
@@ -31,7 +31,7 @@ The Dynamic Island intelligently expands to display context-aware dashboards. Yo
 | **Media Player** | Shows live album art, track details, audio waveforms, and full playback controls. | ![Media](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/media-v2.png) |
 | **Live Lyrics** | Real-time synchronized lyrics with inline collapsed view and full lyrics tab. | ![Live Lyrics](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/main/previews/lyrics.png) |
 | **Blur & Acrylic** | Genuine Windows DWM blur and acrylic backdrop effects for modern depth. | ![Blur & Acrylic](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/main/previews/blur-acrylic.png) |
-| **Calendar** | A monthly grid that always fits its rows, with today marked in the accent colour. A private Google Calendar iCal link adds event dots and the next few upcoming events. | ![Calendar](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/calendar.png) |
+| **Calendar** | A monthly grid that always fits its rows, with today marked in the accent colour. A private Google Calendar iCal link opens an agenda of the next few days, grouped by day, with the month grid one click away. | ![Calendar](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/calendar.png) |
 | **Weather** | Real-time weather stats powered by wttr.in, including wind speed, humidity, and "feels like" temperature. | ![Weather](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/weather-v2.png) |
 | **Hardware Monitor** | CPU, RAM, GPU, disk and live network throughput, with load bars that turn amber past 75% and red past 90%. | ![Hardware Monitor](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/hardware-monitor.png) |
 | **Game Overlay** | Real-time FPS, CPU, GPU, RAM and disk, sized to whichever metrics you enable. | ![Gamebar](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/gamebar-v2.png) |
@@ -99,7 +99,7 @@ The calendar tab can show events from your Google Calendar without signing in. T
 3. Choose **Settings and sharing**.
 4. Scroll to **Integrate calendar** and copy **Secret address in iCal format**. It looks like `https://calendar.google.com/calendar/ical/.../basic.ics`.
 5. In Windhawk, open this mod's settings and paste that address into **Google Calendar → iCal URLs**. More than one calendar is fine: separate the addresses with commas or put each one on its own line.
-6. Days with events get a small dot in the accent colour, and the next few events are listed beside the month. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
+6. The calendar tab opens as an agenda: days grouped under **Today**, **Tomorrow**, and a date, with the time on the left and the title on the right. Each calendar keeps its Google color (a bar on the row, and the dot on the month grid). Deadlines (zero-length, or around 11:59 PM) read as **Due 11:59 PM** in that color. Scroll the list when it is longer than the panel. Click the month header, or the **Month** chip, to get the month grid back; hover a day and that day's events open in a panel beside the island, widened to fit the title. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
 
 The secret address is a private link: anyone who has it can read that calendar, so treat it like a password. The feed is refreshed in the background (every 15 minutes by default). If the PC is offline, the island keeps the last events it successfully loaded.
 
@@ -117,7 +117,7 @@ The secret address is a private link: anyone who has it can read that calendar, 
 
 ### Credits
 - **[Himanshu (devcode90) @GitHub](https://github.com/devcode90)**: Original author of Dynamic Island for Windows.
-- **[Geneustace Wicaksono (SentientPlatypus) @GitHub](https://github.com/SentientPlatypus)**: Google Calendar fork. Events from a private iCal address on the calendar tab, and an upcoming-event heads-up on the collapsed island.
+- **[Geneustace Wicaksono (SentientPlatypus) @GitHub](https://github.com/SentientPlatypus)**: Google Calendar fork. An agenda of the next few days from a private iCal address, with the month grid one click away, and an upcoming-event heads-up on the collapsed island.
 - **[Sarthak Singh (sarthakaksh) @GitHub](https://github.com/sarthakaksh)**: Major feature overhaul including smoothing animations, right-click focus timer, strip mode, lyrics for songs, song recognition (Shazam) , quick lookup, Cross-Source Media Switching, hover clock, robust media controls, zero-CPU instant hide shortcut, Bluetooth battery integration, image clipboard thumbnails, and full-screen autohide fixes.
 - **[ciizerr @GitHub](https://github.com/ciizerr)**: Improved the UI by refining layout alignment, fixing dashboard scaling, and enhancing calendar and weather module integration.
 - **[ChrisSch-dev @GitHub](https://github.com/ChrisSch-dev)**: Added album title support, word wrapping for weather descriptions, sleep resume fixes, and various performance/movement stability improvements.
@@ -589,7 +589,7 @@ We love community contributions! To ensure high-quality updates, please follow t
 - GoogleCalendar:
   - IcsUrls: ""
     $name: iCal URLs
-    $description: "One or more Google Calendar secret iCal addresses (Settings and sharing, then Integrate calendar, then Secret address in iCal format). Separate extra calendars with commas or new lines. Leave blank to keep the month grid only."
+    $description: "One or more Google Calendar secret iCal addresses (Settings and sharing, then Integrate calendar, then Secret address in iCal format). Separate extra calendars with commas or new lines. Add |peacock or |#039BE5 after an address to color that calendar. Names are Google's palette: tomato, flamingo, tangerine, banana, sage, basil, peacock, blueberry, lavender, grape, graphite. With no color, the first calendar is peacock and each further calendar takes the next palette color. Leave blank to keep the month grid only."
   - RefreshMinutes: 15
     $name: Refresh interval (minutes)
     $description: How often to re-download the calendars. 15 by default. The last successful download is kept if a refresh fails.
@@ -599,6 +599,15 @@ We love community contributions! To ensure high-quality updates, please follow t
   - HeadsUpMinutes: 10
     $name: Heads-up window (minutes)
     $description: Show the collapsed heads-up when an event starts within this many minutes. 10 by default.
+  - AgendaDays: 7
+    $name: Agenda days
+    $description: How many days the agenda lists, including today. Days with nothing are skipped, except today. 7 by default.
+  - DefaultView: agenda
+    $name: Calendar default view
+    $description: What the calendar tab opens to once an iCal feed has loaded. With no iCal URL, the month grid is always shown.
+    $options:
+      - agenda: Agenda
+      - month: Month
   $name: Google Calendar
 - Shortcuts:
   - HideShowHotkeyEnabled: true
@@ -965,6 +974,9 @@ struct Event {
     std::vector<When> exdates;
     bool hasRecurrenceId = false;
     When recurrenceId;
+    bool hasColor = false;
+    int colorRank = 0;  // COLOR beats X-APPLE-CALENDAR-COLOR beats X-OUTLOOK-COLOR
+    uint32_t colorRgb = 0;
 };
 
 struct Occurrence {
@@ -986,7 +998,212 @@ struct Occurrence {
     int spanEndYear = 0;
     int spanEndMonth = 0;
     int spanEndDay = 0;
+    bool hasColor = false;
+    uint32_t colorRgb = 0;  // 0xRRGGBB when hasColor
 };
+
+// Google Calendar's event palette, in the order the calendar UI lists them.
+// The product default for a new calendar is peacock.
+inline constexpr uint32_t kGooglePalette[] = {
+    0xD50000u,  // tomato
+    0xE67C73u,  // flamingo
+    0xF4511Eu,  // tangerine
+    0xF6BF26u,  // banana
+    0x33B679u,  // sage
+    0x0B8043u,  // basil
+    0x039BE5u,  // peacock
+    0x3F51B5u,  // blueberry
+    0x7986CBu,  // lavender
+    0x8E24AAu,  // grape
+    0x616161u,  // graphite
+};
+inline constexpr int kGooglePaletteCount = 11;
+inline constexpr int kGooglePalettePeacock = 6;
+
+inline uint32_t FeedPaletteColor(int feedIndex) {
+    if (feedIndex < 0) feedIndex = 0;
+    return kGooglePalette[(kGooglePalettePeacock + feedIndex) % kGooglePaletteCount];
+}
+
+inline std::string_view TrimColorText(std::string_view s) {
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t' || s.front() == '\r' || s.front() == '\n')) {
+        s.remove_prefix(1);
+    }
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\r' || s.back() == '\n')) {
+        s.remove_suffix(1);
+    }
+    if (s.size() >= 2 && ((s.front() == '"' && s.back() == '"') || (s.front() == '\'' && s.back() == '\''))) {
+        s.remove_prefix(1);
+        s.remove_suffix(1);
+    }
+    return s;
+}
+
+inline int HexNibble(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+inline bool ParseHexColor(std::string_view s, uint32_t& rgb) {
+    if (!s.empty() && s.front() == '#') s.remove_prefix(1);
+    if (s.size() != 3 && s.size() != 4 && s.size() != 6 && s.size() != 8) return false;
+    const bool wide = s.size() >= 6;
+    auto channel = [&](size_t index) -> int {
+        if (wide) {
+            const int hi = HexNibble(s[index]);
+            const int lo = HexNibble(s[index + 1]);
+            if (hi < 0 || lo < 0) return -1;
+            return hi * 16 + lo;
+        }
+        const int n = HexNibble(s[index]);
+        if (n < 0) return -1;
+        return n * 16 + n;
+    };
+    const int r = channel(0);
+    const int g = channel(wide ? 2 : 1);
+    const int b = channel(wide ? 4 : 2);
+    if (r < 0 || g < 0 || b < 0) return false;
+    rgb = (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
+    return true;
+}
+
+inline bool ParseRgbFunc(std::string_view s, uint32_t& rgb) {
+    if (s.size() < 10) return false;
+    auto lower = [](char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; };
+    if (lower(s[0]) != 'r' || lower(s[1]) != 'g' || lower(s[2]) != 'b' || s[3] != '(' || s.back() != ')') {
+        return false;
+    }
+    s.remove_prefix(4);
+    s.remove_suffix(1);
+    int chans[3] = {};
+    size_t i = 0;
+    for (int c = 0; c < 3; ++c) {
+        while (i < s.size() && (s[i] == ' ' || s[i] == '\t')) ++i;
+        if (i >= s.size() || s[i] < '0' || s[i] > '9') return false;
+        int val = 0;
+        while (i < s.size() && s[i] >= '0' && s[i] <= '9') {
+            val = val * 10 + (s[i] - '0');
+            ++i;
+            if (val > 10000) return false;
+        }
+        bool pct = false;
+        if (i < s.size() && s[i] == '%') {
+            pct = true;
+            ++i;
+        }
+        while (i < s.size() && (s[i] == ' ' || s[i] == '\t')) ++i;
+        if (c < 2) {
+            if (i >= s.size() || s[i] != ',') return false;
+            ++i;
+        }
+        if (pct) val = val * 255 / 100;
+        if (val > 255) val = 255;
+        chans[c] = val;
+    }
+    rgb = (static_cast<uint32_t>(chans[0]) << 16) | (static_cast<uint32_t>(chans[1]) << 8) |
+          static_cast<uint32_t>(chans[2]);
+    return true;
+}
+
+// Comma-wrapped "name=rrggbb" so a short name cannot match inside a longer one.
+inline constexpr char kGoogleColorNames[] =
+    ",tomato=d50000,flamingo=e67c73,tangerine=f4511e,banana=f6bf26,sage=33b679,basil=0b8043,"
+    "peacock=039be5,blueberry=3f51b5,lavender=7986cb,grape=8e24aa,graphite=616161,";
+
+inline constexpr char kCssColorNames[] =
+    ",aliceblue=f0f8ff,antiquewhite=faebd7,aqua=00ffff,aquamarine=7fffd4,azure=f0ffff,beige=f5f5dc,"
+    "bisque=ffe4c4,black=000000,blanchedalmond=ffebcd,blue=0000ff,blueviolet=8a2be2,brown=a52a2a,"
+    "burlywood=deb887,cadetblue=5f9ea0,chartreuse=7fff00,chocolate=d2691e,coral=ff7f50,"
+    "cornflowerblue=6495ed,cornsilk=fff8dc,crimson=dc143c,cyan=00ffff,darkblue=00008b,darkcyan=008b8b,"
+    "darkgoldenrod=b8860b,darkgray=a9a9a9,darkgreen=006400,darkgrey=a9a9a9,darkkhaki=bdb76b,"
+    "darkmagenta=8b008b,darkolivegreen=556b2f,darkorange=ff8c00,darkorchid=9932cc,darkred=8b0000,"
+    "darksalmon=e9967a,darkseagreen=8fbc8f,darkslateblue=483d8b,darkslategray=2f4f4f,darkslategrey=2f4f4f,"
+    "darkturquoise=00ced1,darkviolet=9400d3,deeppink=ff1493,deepskyblue=00bfff,dimgray=696969,"
+    "dimgrey=696969,dodgerblue=1e90ff,firebrick=b22222,floralwhite=fffaf0,forestgreen=228b22,"
+    "fuchsia=ff00ff,gainsboro=dcdcdc,ghostwhite=f8f8ff,gold=ffd700,goldenrod=daa520,gray=808080,"
+    "green=008000,greenyellow=adff2f,grey=808080,honeydew=f0fff0,hotpink=ff69b4,indianred=cd5c5c,"
+    "indigo=4b0082,ivory=fffff0,khaki=f0e68c,lavender=e6e6fa,lavenderblush=fff0f5,lawngreen=7cfc00,"
+    "lemonchiffon=fffacd,lightblue=add8e6,lightcoral=f08080,lightcyan=e0ffff,lightgoldenrodyellow=fafad2,"
+    "lightgray=d3d3d3,lightgreen=90ee90,lightgrey=d3d3d3,lightpink=ffb6c1,lightsalmon=ffa07a,"
+    "lightseagreen=20b2aa,lightskyblue=87cefa,lightslategray=778899,lightslategrey=778899,"
+    "lightsteelblue=b0c4de,lightyellow=ffffe0,lime=00ff00,limegreen=32cd32,linen=faf0e6,magenta=ff00ff,"
+    "maroon=800000,mediumaquamarine=66cdaa,mediumblue=0000cd,mediumorchid=ba55d3,mediumpurple=9370db,"
+    "mediumseagreen=3cb371,mediumslateblue=7b68ee,mediumspringgreen=00fa9a,mediumturquoise=48d1cc,"
+    "mediumvioletred=c71585,midnightblue=191970,mintcream=f5fffa,mistyrose=ffe4e1,moccasin=ffe4b5,"
+    "navajowhite=ffdead,navy=000080,oldlace=fdf5e6,olive=808000,olivedrab=6b8e23,orange=ffa500,"
+    "orangered=ff4500,orchid=da70d6,palegoldenrod=eee8aa,palegreen=98fb98,paleturquoise=afeeee,"
+    "palevioletred=db7093,papayawhip=ffefd5,peachpuff=ffdab9,peru=cd853f,pink=ffc0cb,plum=dda0dd,"
+    "powderblue=b0e0e6,purple=800080,rebeccapurple=663399,red=ff0000,rosybrown=bc8f8f,royalblue=4169e1,"
+    "saddlebrown=8b4513,salmon=fa8072,sandybrown=f4a460,seagreen=2e8b57,seashell=fff5ee,sienna=a0522d,"
+    "silver=c0c0c0,skyblue=87ceeb,slateblue=6a5acd,slategray=708090,slategrey=708090,snow=fffafa,"
+    "springgreen=00ff7f,steelblue=4682b4,tan=d2b48c,teal=008080,thistle=d8bfd8,tomato=ff6347,"
+    "turquoise=40e0d0,violet=ee82ee,wheat=f5deb3,white=ffffff,whitesmoke=f5f5f5,yellow=ffff00,"
+    "yellowgreen=9acd32,";
+
+inline bool LookupNamedColor(std::string_view table, std::string_view name, uint32_t& rgb) {
+    if (name.empty() || name.size() > 32) return false;
+    std::string key;
+    key.push_back(',');
+    for (char ch : name) {
+        if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+        else if (!((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9'))) return false;
+        key.push_back(ch);
+    }
+    key.push_back('=');
+    const size_t pos = table.find(key);
+    if (pos == std::string_view::npos) return false;
+    size_t i = pos + key.size();
+    uint32_t value = 0;
+    for (int n = 0; n < 6; ++n) {
+        if (i >= table.size()) return false;
+        const int h = HexNibble(table[i++]);
+        if (h < 0) return false;
+        value = (value << 4) | static_cast<uint32_t>(h);
+    }
+    rgb = value;
+    return true;
+}
+
+// RFC 7986 COLOR is a CSS color. CSS names win over the Google palette where they
+// differ (tomato, lavender). Palette names still work for peacock and the rest.
+inline bool ParseCssColor(std::string_view text, uint32_t& rgb) {
+    text = TrimColorText(text);
+    if (text.empty()) return false;
+    if (ParseRgbFunc(text, rgb)) return true;
+    if (text.front() == '#') return ParseHexColor(text, rgb);
+    if (LookupNamedColor(kCssColorNames, text, rgb)) return true;
+    if (LookupNamedColor(kGoogleColorNames, text, rgb)) return true;
+    return ParseHexColor(text, rgb);
+}
+
+// The |color suffix on an iCal URL. Google's names win, so |tomato is #D50000
+// rather than the CSS tomato.
+inline bool ParseFeedColor(std::string_view text, uint32_t& rgb) {
+    text = TrimColorText(text);
+    if (text.empty()) return false;
+    if (ParseRgbFunc(text, rgb)) return true;
+    if (!text.empty() && text.front() == '#') return ParseHexColor(text, rgb);
+    if (LookupNamedColor(kGoogleColorNames, text, rgb)) return true;
+    if (LookupNamedColor(kCssColorNames, text, rgb)) return true;
+    return ParseHexColor(text, rgb);
+}
+
+inline void AssignCalendarColor(bool& has, int& rank, uint32_t& rgb, const std::string& name,
+                                std::string_view value) {
+    int next = 0;
+    if (name == "COLOR") next = 3;
+    else if (name == "X-APPLE-CALENDAR-COLOR") next = 2;
+    else if (name == "X-OUTLOOK-COLOR") next = 1;
+    else return;
+    if (next < rank) return;
+    uint32_t parsed = 0;
+    if (!ParseCssColor(value, parsed)) return;
+    has = true;
+    rank = next;
+    rgb = parsed;
+}
 
 struct ExpandWindow {
     int64_t startUtc = 0;
@@ -1384,6 +1601,9 @@ inline std::vector<When> ExdatesFromProperty(const Property& prop) {
 struct ParsedFeed {
     std::map<std::string, Zone> zones;
     std::vector<Event> events;
+    bool hasColor = false;
+    int colorRank = 0;
+    uint32_t colorRgb = 0;
 };
 
 inline const Zone* FindZone(const std::map<std::string, Zone>& zones, const std::string& tzid) {
@@ -1620,7 +1840,11 @@ inline ParsedFeed ParseFeed(std::string_view ics) {
             } else if (prop.name == "RECURRENCE-ID") {
                 event.recurrenceId = WhenFromProperty(prop);
                 event.hasRecurrenceId = event.recurrenceId.valid;
+            } else {
+                AssignCalendarColor(event.hasColor, event.colorRank, event.colorRgb, prop.name, prop.value);
             }
+        } else if (mode == Mode::Top) {
+            AssignCalendarColor(feed.hasColor, feed.colorRank, feed.colorRgb, prop.name, prop.value);
         } else if (mode == Mode::Zone) {
             if (prop.name == "TZID") {
                 std::string id = prop.value;
@@ -1693,6 +1917,8 @@ inline Occurrence MakeAllDay(const Event& ev, const Civil& start, int days) {
     occ.spanEndDay = end.day;
     occ.startUtc = CivilToUnixLocal(Civil{start.year, start.month, start.day, 0, 0, 0});
     occ.endUtc = CivilToUnixLocal(end);
+    occ.hasColor = ev.hasColor;
+    occ.colorRgb = ev.colorRgb;
     return occ;
 }
 
@@ -1703,8 +1929,17 @@ inline Occurrence MakeTimed(const Event& ev, int64_t startUtc, int64_t durationS
     occ.allDay = false;
     occ.startUtc = startUtc;
     occ.endUtc = startUtc + (durationSec > 0 ? durationSec : 0);
+    occ.hasColor = ev.hasColor;
+    occ.colorRgb = ev.colorRgb;
     SetSpanFromUtc(occ);
     return occ;
+}
+
+inline void FillCalendarColor(Occurrence& occ, const ParsedFeed& feed) {
+    if (!occ.hasColor && feed.hasColor) {
+        occ.hasColor = true;
+        occ.colorRgb = feed.colorRgb;
+    }
 }
 
 inline bool DatesOverlap(int sY, int sM, int sD, int eY, int eM, int eD, const ExpandWindow& w) {
@@ -1829,6 +2064,7 @@ inline void ExpandEvent(const Event& ev, const ParsedFeed& feed, const std::set<
             excluded = skipUtc.count(utc) > 0 || skipDate.count(PackDate(wall)) > 0;
             if (!excluded && InstantsOverlap(utc, utc + duration, window)) {
                 out.push_back(MakeTimed(ev, utc, duration));
+                FillCalendarColor(out.back(), feed);
             }
             if (rule.count == 0 && !rule.hasUntil && utc >= window.endUtc) stopped = true;
             if (emitted > 8000) stopped = true;
@@ -1837,6 +2073,7 @@ inline void ExpandEvent(const Event& ev, const ParsedFeed& feed, const std::set<
 
         if (!excluded) {
             Occurrence occ = MakeAllDay(ev, wall, dayLength);
+            FillCalendarColor(occ, feed);
             if (DatesOverlap(occ.spanYear, occ.spanMonth, occ.spanDay, occ.spanEndYear, occ.spanEndMonth,
                              occ.spanEndDay, window)) {
                 out.push_back(std::move(occ));
@@ -1939,6 +2176,7 @@ inline void AppendSingle(const Event& ev, const ParsedFeed& feed, const ExpandWi
     if (ev.start.dateOnly) {
         const int days = AllDayLengthOf(ev, feed.zones);
         Occurrence occ = MakeAllDay(ev, ev.start.civil, days);
+        FillCalendarColor(occ, feed);
         if (DatesOverlap(occ.spanYear, occ.spanMonth, occ.spanDay, occ.spanEndYear, occ.spanEndMonth,
                          occ.spanEndDay, window)) {
             out.push_back(std::move(occ));
@@ -1949,6 +2187,7 @@ inline void AppendSingle(const Event& ev, const ParsedFeed& feed, const ExpandWi
     const int64_t duration = TimedDurationOf(ev, feed.zones);
     if (InstantsOverlap(start, start + duration, window)) {
         out.push_back(MakeTimed(ev, start, duration));
+        FillCalendarColor(out.back(), feed);
     }
 }
 
@@ -2020,6 +2259,192 @@ inline std::string HeadsUpLabel(const std::vector<Occurrence>& events, int64_t n
     int mins = static_cast<int>((bestDelta + 30) / 60);
     if (mins < 1) mins = 1;
     return title + " in " + std::to_string(mins) + " min";
+}
+
+// Agenda list metrics, in content pixels. DrawPill multiplies the whole island
+// by sizeScale (which already includes DPI), and text formats multiply by the
+// separate Text size setting. These numbers are the 1x design.
+struct AgendaMetrics {
+    static constexpr float kPanelW = 440.0f;
+    static constexpr float kPanelH = 300.0f;
+    static constexpr float kPadX = 16.0f;
+    static constexpr float kHeaderTop = 8.0f;
+    static constexpr float kHeaderH = 22.0f;
+    static constexpr float kListTop = 36.0f;
+    static constexpr float kListBottom = 10.0f;
+    static constexpr float kDayHeaderH = 18.0f;
+    static constexpr float kDayGap = 6.0f;
+    static constexpr float kRowH = 26.0f;
+    static constexpr float kRowHLoc = 38.0f;
+    static constexpr float kRowGap = 2.0f;
+    static constexpr float kTimeColW = 100.0f;
+    static constexpr float kFade = 16.0f;
+    static constexpr float kDotReserve = 18.0f;
+    static constexpr float kTitlePx = 13.25f;
+    static constexpr float kTimePx = 12.0f;
+    static constexpr float kMetaPx = 11.0f;
+    static constexpr float kDayPx = 12.0f;
+    static constexpr float kToggleW = 64.0f;
+    static constexpr float kToggleH = 18.0f;
+};
+
+enum class AgendaRole { Timed, AllDay, Deadline, Empty };
+
+struct AgendaInput {
+    bool allDay = false;
+    bool hasLocation = false;
+    int64_t startUtc = 0;
+    int64_t endUtc = 0;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int hour = 0;
+    int minute = 0;
+    int spanYear = 0;
+    int spanMonth = 0;
+    int spanDay = 0;
+    int spanEndYear = 0;
+    int spanEndMonth = 0;
+    int spanEndDay = 0;
+};
+
+struct AgendaLine {
+    int eventIndex = -1;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int dayOffset = 0;  // 0 = today, 1 = tomorrow
+    AgendaRole role = AgendaRole::Timed;
+    bool past = false;
+    bool happening = false;
+    bool dayHeader = false;
+    float y = 0.0f;
+    float h = 0.0f;
+};
+
+struct AgendaLayout {
+    std::vector<AgendaLine> lines;
+    float contentHeight = 0.0f;
+};
+
+inline bool AgendaDateInSpan(const AgendaInput& ev, int y, int m, int d) {
+    const int cur = PackDate(y, m, d);
+    const int start = PackDate(ev.spanYear, ev.spanMonth, ev.spanDay);
+    const int end = PackDate(ev.spanEndYear, ev.spanEndMonth, ev.spanEndDay);
+    return cur >= start && cur < end;
+}
+
+// Zero-length items, and anything that starts at 23:50 or later, are deadlines
+// ("Due 11:59 PM") rather than meetings.
+inline bool AgendaIsDeadline(const AgendaInput& ev) {
+    if (ev.allDay) return false;
+    if (ev.endUtc - ev.startUtc <= 60) return true;
+    return ev.hour == 23 && ev.minute >= 50;
+}
+
+inline AgendaLayout BuildAgenda(const std::vector<AgendaInput>& events, int64_t nowUtc, int dayCount) {
+    AgendaLayout layout;
+    if (dayCount < 1) dayCount = 1;
+    if (dayCount > 31) dayCount = 31;
+    const Civil today = UnixUtcToLocal(nowUtc);
+
+    for (int offset = 0; offset < dayCount; ++offset) {
+        const Civil date = AddDays(Civil{today.year, today.month, today.day, 0, 0, 0}, offset);
+        struct Row {
+            int index;
+            AgendaRole role;
+            bool past;
+            bool happening;
+            int hour;
+            int minute;
+            int64_t startUtc;
+            bool hasLocation;
+        };
+        std::vector<Row> rows;
+        for (int i = 0; i < static_cast<int>(events.size()); ++i) {
+            const AgendaInput& ev = events[static_cast<size_t>(i)];
+            const bool onDay = ev.allDay ? AgendaDateInSpan(ev, date.year, date.month, date.day)
+                                         : (ev.year == date.year && ev.month == date.month && ev.day == date.day);
+            if (!onDay) continue;
+            Row row;
+            row.index = i;
+            row.hour = ev.hour;
+            row.minute = ev.minute;
+            row.startUtc = ev.startUtc;
+            row.hasLocation = ev.hasLocation;
+            row.happening = false;
+            row.past = false;
+            if (ev.allDay) {
+                row.role = AgendaRole::AllDay;
+            } else if (AgendaIsDeadline(ev)) {
+                row.role = AgendaRole::Deadline;
+                row.past = nowUtc >= ev.startUtc;
+            } else {
+                row.role = AgendaRole::Timed;
+                if (ev.endUtc > ev.startUtc && ev.startUtc <= nowUtc && nowUtc < ev.endUtc) {
+                    row.happening = true;
+                } else if (ev.endUtc <= nowUtc) {
+                    row.past = true;
+                }
+            }
+            rows.push_back(row);
+        }
+        if (rows.empty() && offset != 0) continue;
+
+        std::sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) {
+            const int aAll = a.role == AgendaRole::AllDay ? 0 : 1;
+            const int bAll = b.role == AgendaRole::AllDay ? 0 : 1;
+            if (aAll != bAll) return aAll < bAll;
+            if (a.hour != b.hour) return a.hour < b.hour;
+            if (a.minute != b.minute) return a.minute < b.minute;
+            if (a.startUtc != b.startUtc) return a.startUtc < b.startUtc;
+            return a.index < b.index;
+        });
+
+        if (!layout.lines.empty()) {
+            layout.contentHeight += AgendaMetrics::kDayGap;
+        }
+        AgendaLine header;
+        header.year = date.year;
+        header.month = date.month;
+        header.day = date.day;
+        header.dayOffset = offset;
+        header.dayHeader = true;
+        header.y = layout.contentHeight;
+        header.h = AgendaMetrics::kDayHeaderH;
+        layout.lines.push_back(header);
+        layout.contentHeight += header.h;
+
+        if (rows.empty()) {
+            AgendaLine empty;
+            empty.year = date.year;
+            empty.month = date.month;
+            empty.day = date.day;
+            empty.dayOffset = offset;
+            empty.role = AgendaRole::Empty;
+            empty.y = layout.contentHeight;
+            empty.h = AgendaMetrics::kRowH;
+            layout.lines.push_back(empty);
+            layout.contentHeight += empty.h + AgendaMetrics::kRowGap;
+            continue;
+        }
+        for (const Row& row : rows) {
+            AgendaLine line;
+            line.eventIndex = row.index;
+            line.year = date.year;
+            line.month = date.month;
+            line.day = date.day;
+            line.dayOffset = offset;
+            line.role = row.role;
+            line.past = row.past;
+            line.happening = row.happening;
+            line.y = layout.contentHeight;
+            line.h = row.hasLocation ? AgendaMetrics::kRowHLoc : AgendaMetrics::kRowH;
+            layout.lines.push_back(line);
+            layout.contentHeight += line.h + AgendaMetrics::kRowGap;
+        }
+    }
+    return layout;
 }
 
 }  // namespace di_ics
@@ -2610,6 +3035,8 @@ struct Settings {
     int gcalRefreshMinutes = 15;
     bool gcalHeadsUp = true;
     int gcalHeadsUpMinutes = 10;
+    int gcalAgendaDays = 7;
+    bool gcalDefaultMonth = false;
     bool lyrics = false;
     bool lyricsVisualizer = true;
     bool karaokeLyrics = true;
@@ -3038,6 +3465,7 @@ struct GcalEvent {
     int spanEndYear = 0;  // exclusive
     int spanEndMonth = 0;
     int spanEndDay = 0;
+    uint32_t colorRgb = 0x039BE5;  // resolved calendar color, 0xRRGGBB
 };
 
 struct GcalSnapshot {
@@ -3152,6 +3580,41 @@ HANDLE g_audioThread = nullptr;
 HANDLE g_weatherThread = nullptr;
 HANDLE g_gcalThread = nullptr;
 HANDLE g_gcalWakeEvent = nullptr;
+// Session override of GoogleCalendar.DefaultView. LoadSettings resets it only
+// when that setting itself changes, so a click on Month / Agenda survives a
+// refresh-interval edit.
+std::atomic<bool> g_gcalShowMonth{false};
+std::atomic<bool> g_gcalAgendaOn{false};
+std::atomic<float> g_gcalScroll{0.0f};
+std::atomic<float> g_gcalMaxScroll{0.0f};
+std::atomic<float> g_gcalToggleL{0.0f};
+std::atomic<float> g_gcalToggleT{0.0f};
+std::atomic<float> g_gcalToggleR{0.0f};
+std::atomic<float> g_gcalToggleB{0.0f};
+std::atomic<bool> g_gcalToggleValid{false};
+// Month-grid geometry, in content pixels relative to the island, so a hover can
+// name the day under the cursor. Invalid while the agenda is showing.
+std::atomic<bool> g_gcalGridValid{false};
+std::atomic<float> g_gcalGridL{0.0f};
+std::atomic<float> g_gcalGridT{0.0f};
+std::atomic<float> g_gcalColW{0.0f};
+std::atomic<float> g_gcalRowH{0.0f};
+std::atomic<int> g_gcalGridStart{0};
+std::atomic<int> g_gcalGridDays{0};
+std::atomic<int> g_gcalGridYear{0};
+std::atomic<int> g_gcalGridMonth{0};
+std::atomic<int> g_gcalHoverDay{-1};
+std::atomic<int> g_gcalHoverYear{0};
+std::atomic<int> g_gcalHoverMonth{0};
+// Day-detail side panel. Its window lives on the render thread; the hit rect is
+// the visible pill in screen pixels (the shadow pad stays click-through).
+constexpr wchar_t kDayPanelClass[] = L"Windhawk.DynamicIslandDayPanel";
+HWND g_dayPanelHwnd = nullptr;
+bool g_dayPanelClassRegistered = false;
+bool g_dayPanelHitLive = false;
+RECT g_dayPanelHit{0, 0, 0, 0};
+std::atomic<bool> g_dayPanelPointer{false};
+std::atomic<float> g_dayPanelWheel{0.0f};
 HANDLE g_lyricsThread = nullptr;
 HANDLE g_notificationThread = nullptr;
 HANDLE g_bluetoothThread = nullptr;
@@ -3170,6 +3633,47 @@ std::atomic<int> g_lyricsEffectiveOffsetBtMs{0};      // Bluetooth output: setti
 // VolumeNotifyClient) so the Bluetooth watcher, which comes earlier in the file, can set it.
 std::atomic<bool> g_volumeEndpointStale{true};
 std::atomic<bool> g_layoutDirty = true;
+
+LRESULT CALLBACK DayPanelWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_MOUSEACTIVATE:
+            return MA_NOACTIVATE;
+        case WM_NCHITTEST: {
+            if (!g_dayPanelHitLive) return HTTRANSPARENT;
+            POINT pt{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+            if (PtInRect(&g_dayPanelHit, pt)) return HTCLIENT;
+            return HTTRANSPARENT;
+        }
+        case WM_MOUSEMOVE:
+            g_dayPanelPointer.store(true, std::memory_order_relaxed);
+            {
+                TRACKMOUSEEVENT tme = {};
+                tme.cbSize = sizeof(tme);
+                tme.dwFlags = TME_LEAVE;
+                tme.hwndTrack = hwnd;
+                TrackMouseEvent(&tme);
+            }
+            return 0;
+        case WM_MOUSELEAVE:
+            g_dayPanelPointer.store(false, std::memory_order_relaxed);
+            g_layoutDirty = true;
+            return 0;
+        case WM_MOUSEWHEEL: {
+            const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            if (delta != 0) {
+                const float px = -static_cast<float>(delta) / static_cast<float>(WHEEL_DELTA) * 64.0f;
+                float cur = g_dayPanelWheel.load(std::memory_order_relaxed);
+                while (!g_dayPanelWheel.compare_exchange_weak(cur, cur + px, std::memory_order_relaxed)) {
+                }
+                g_layoutDirty = true;
+            }
+            return 0;
+        }
+        case WM_ERASEBKGND:
+            return 1;
+    }
+    return DefWindowProcW(hwnd, msg, wParam, lParam);
+}
 std::atomic<bool> g_clickExpanded = false;
 std::atomic<int> g_pressedMediaButton = -1;
 std::atomic<int> g_hoveredMediaButton = -1;
@@ -3424,6 +3928,80 @@ int HardwareMonitorTabIndex(const Settings& settings) {
         return -1;
     }
     return 2 + (settings.weather ? 1 : 0) + MediaTabIndex(settings);
+}
+
+int CalendarTabIndex(const Settings& settings, bool mediaSurface) {
+    // Idle: time, calendar, ...  Media: [lyrics,] media, calendar, ...
+    return mediaSurface ? 1 + MediaTabIndex(settings) : 1;
+}
+
+bool GcalAgendaSelected(const Settings& settings, const GcalSnapshot* snap) {
+    return snap && snap->loaded && !settings.gcalIcsUrls.empty() &&
+           !g_gcalShowMonth.load(std::memory_order_relaxed);
+}
+
+void GcalToggleView() {
+    g_gcalShowMonth.store(!g_gcalShowMonth.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    g_gcalScroll.store(0.0f, std::memory_order_relaxed);
+    g_gcalHoverDay.store(-1, std::memory_order_relaxed);
+    g_layoutDirty = true;
+}
+
+// Pixel scroll. Returns false at the edge so a fresh wheel gesture can change tabs.
+bool GcalScrollBy(float deltaPx) {
+    const float maxScroll = std::max(0.0f, g_gcalMaxScroll.load(std::memory_order_relaxed));
+    const float current = g_gcalScroll.load(std::memory_order_relaxed);
+    float next = current + deltaPx;
+    if (next < 0.0f) next = 0.0f;
+    if (next > maxScroll) next = maxScroll;
+    if (next == current) return false;
+    g_gcalScroll.store(next, std::memory_order_relaxed);
+    g_layoutDirty = true;
+    return true;
+}
+
+bool GcalToggleHitTest(const MediaContentPoint& pt) {
+    if (!pt.valid || !g_gcalToggleValid.load(std::memory_order_relaxed)) return false;
+    if (pt.height <= MediaLayout::kExpandedMinHeight) return false;
+    const float l = g_gcalToggleL.load(std::memory_order_relaxed);
+    const float t = g_gcalToggleT.load(std::memory_order_relaxed);
+    const float r = g_gcalToggleR.load(std::memory_order_relaxed);
+    const float b = g_gcalToggleB.load(std::memory_order_relaxed);
+    return pt.x >= l && pt.x <= r && pt.y >= t && pt.y <= b;
+}
+
+bool GcalListHitTest(const MediaContentPoint& pt) {
+    if (!pt.valid || !g_gcalAgendaOn.load(std::memory_order_relaxed)) return false;
+    if (pt.height <= MediaLayout::kExpandedMinHeight) return false;
+    if (g_gcalMaxScroll.load(std::memory_order_relaxed) <= 0.5f) return false;
+    return pt.x >= di_ics::AgendaMetrics::kPadX &&
+           pt.x <= pt.width - di_ics::AgendaMetrics::kDotReserve &&
+           pt.y >= di_ics::AgendaMetrics::kListTop &&
+           pt.y <= pt.height - di_ics::AgendaMetrics::kListBottom;
+}
+
+// Day number under the cursor, or -1. Content point is relative to the island.
+int GcalDayAtPoint(const MediaContentPoint& pt) {
+    if (!pt.valid || !g_gcalGridValid.load(std::memory_order_relaxed)) return -1;
+    if (pt.height <= MediaLayout::kExpandedMinHeight) return -1;
+    const float colW = g_gcalColW.load(std::memory_order_relaxed);
+    const float rowH = g_gcalRowH.load(std::memory_order_relaxed);
+    if (colW < 1.0f || rowH < 1.0f) return -1;
+    const float x = pt.x - g_gcalGridL.load(std::memory_order_relaxed);
+    const float y = pt.y - g_gcalGridT.load(std::memory_order_relaxed);
+    if (x < 0.0f || y < 0.0f) return -1;
+    const int col = static_cast<int>(x / colW);
+    const int row = static_cast<int>(y / rowH);
+    if (col < 0 || col > 6 || row < 0 || row > 5) return -1;
+    const int day = row * 7 + col - g_gcalGridStart.load(std::memory_order_relaxed) + 1;
+    const int days = g_gcalGridDays.load(std::memory_order_relaxed);
+    if (day < 1 || day > days) return -1;
+    return day;
+}
+
+D2D1_COLOR_F GcalRgb(uint32_t rgb, float alpha) {
+    return D2D1::ColorF(((rgb >> 16) & 255) / 255.0f, ((rgb >> 8) & 255) / 255.0f,
+                        (rgb & 255) / 255.0f, alpha);
 }
 
 int FileTrayTabIndex(const Settings& settings) {
@@ -4752,6 +5330,11 @@ void LoadSettings() {
         if (lead <= 0) lead = 10;
         next.gcalHeadsUpMinutes = ClampInt(lead, 1, 180);
         next.gcalHeadsUp = Wh_GetIntSetting(L"GoogleCalendar.HeadsUp") != 0;
+        int days = Wh_GetIntSetting(L"GoogleCalendar.AgendaDays");
+        if (days <= 0) days = 7;
+        next.gcalAgendaDays = ClampInt(days, 1, 30);
+        const std::wstring view = GetStringSettingCopy(L"GoogleCalendar.DefaultView");
+        next.gcalDefaultMonth = _wcsicmp(view.c_str(), L"month") == 0;
     }
     next.lyrics = Wh_GetIntSetting(L"Modules.Lyrics") != 0;
     next.lyricsVisualizer = Wh_GetIntSetting(L"Modules.LyricsVisualizer") != 0;
@@ -5046,6 +5629,9 @@ void LoadSettings() {
         cityChanged = next.weatherCity != g_settings.weatherCity;
         gcalChanged = next.gcalIcsUrls != g_settings.gcalIcsUrls ||
                       next.gcalRefreshMinutes != g_settings.gcalRefreshMinutes;
+        if (next.gcalDefaultMonth != g_settings.gcalDefaultMonth) {
+            g_gcalShowMonth.store(next.gcalDefaultMonth, std::memory_order_relaxed);
+        }
         capsLockChanged = next.capsLock != g_settings.capsLock;
         hotkeySettingChanged =
             next.hideShowHotkeyEnabled != g_settings.hideShowHotkeyEnabled ||
@@ -5189,6 +5775,7 @@ struct Slot {
 };
 
 Slot g_slots[kMaxPills];
+Slot g_panelSlot;  // blur behind the day-detail side panel; not one of the island pills
 SetWindowCompositionAttribute_t g_setWca = nullptr;
 bool g_resolved = false;
 bool g_supported = false;  // API present and Windows 10 1803 or newer
@@ -5332,8 +5919,13 @@ void HideSlot(Slot& s) {
     s.accentState = -1;
 }
 
+void HidePanel() {
+    HideSlot(g_panelSlot);
+}
+
 void HideAll() {
     for (Slot& s : g_slots) HideSlot(s);
+    HidePanel();
     g_lastSync = {};
 }
 
@@ -5344,6 +5936,10 @@ void DestroyAll() {
         }
         s = Slot{};
     }
+    if (g_panelSlot.hwnd && IsWindow(g_panelSlot.hwnd)) {
+        DestroyWindow(g_panelSlot.hwnd);
+    }
+    g_panelSlot = Slot{};
     g_lastSync = {};
     if (g_classRegistered) {
         UnregisterClassW(kClassName, GetModuleHandleW(nullptr));
@@ -5528,6 +6124,46 @@ void Sync(HWND island, POINT origin, const D2D1_RECT_F* rects, const float* radi
             g_lastSync.radius[i] = g_lastSync.lift[i] = 0;
         }
     }
+}
+
+// Blur window for the day panel. Kept out of g_slots so Sync()'s "hide the
+// unused island pills" pass cannot dismiss it. `panel` is the layered window
+// this backdrop sits directly behind.
+void SyncPanel(HWND panel, float left, float top, float right, float bottom, float radius,
+               BackdropMaterial material, const D2D1_COLOR_F& tint, float tintAlpha) {
+    if (material == BackdropMaterial::None || !panel || !IsWindowVisible(panel) || !Available() ||
+        Backdrop::ClipUiActiveCached()) {
+        HidePanel();
+        return;
+    }
+    constexpr int inset = 1;
+    const int x = static_cast<int>(std::lround(left)) + inset;
+    const int y = static_cast<int>(std::lround(top)) + inset;
+    const int r = static_cast<int>(std::lround(right)) - inset;
+    const int b = static_cast<int>(std::lround(bottom)) - inset;
+    const int w = r - x;
+    const int h = b - y;
+    if (w < 4 || h < 4) {
+        HidePanel();
+        return;
+    }
+    int rad = static_cast<int>(std::lround(radius)) - inset;
+    rad = std::clamp(rad, 0, std::min(w, h) / 2);
+
+    int state = kAccentEnableBlurBehind;
+    DWORD color = ColorToAccentAbgr(tint, tintAlpha * 0.22f);
+    if (material == BackdropMaterial::Acrylic) {
+        state = kAccentEnableAcrylicBlurBehind;
+        color = ColorToAccentAbgr(tint, tintAlpha);
+    }
+    const bool wantTopMost = g_settings.alwaysOnTop;
+    if (!g_panelSlot.hwnd) {
+        g_panelSlot.hwnd = CreateBackdropWindow(panel);
+        g_panelSlot.topMost = wantTopMost;
+        if (!g_panelSlot.hwnd) return;
+    }
+    ApplyAccent(g_panelSlot, state, color);
+    PlaceSlot(g_panelSlot, panel, x, y, w, h, rad, 0, wantTopMost);
 }
 
 }  // namespace DwmBackdrop
@@ -8704,8 +9340,15 @@ std::wstring Utf8ToWideFlat(std::string_view text) {
     return out;
 }
 
-std::vector<std::wstring> SplitIcsUrls(const std::wstring& raw) {
-    std::vector<std::wstring> urls;
+struct IcsFeedSpec {
+    std::wstring url;
+    uint32_t colorRgb = 0x039BE5;
+};
+
+// "url", "url|peacock", or "url|#039BE5". A suffix that is not a color stays
+// part of the URL. Feeds with no color walk Google's palette from peacock.
+std::vector<IcsFeedSpec> SplitIcsUrls(const std::wstring& raw) {
+    std::vector<IcsFeedSpec> feeds;
     std::wstring cur;
     auto flush = [&]() {
         const size_t begin = cur.find_first_not_of(L" \t\r\n\"'");
@@ -8716,14 +9359,40 @@ std::vector<std::wstring> SplitIcsUrls(const std::wstring& raw) {
         const size_t end = cur.find_last_not_of(L" \t\r\n\"'");
         std::wstring url = cur.substr(begin, end - begin + 1);
         cur.clear();
-        if (url.size() >= 8) urls.push_back(std::move(url));
+        bool explicitColor = false;
+        uint32_t color = 0;
+        const size_t bar = url.rfind(L'|');
+        if (bar != std::wstring::npos && bar > 0 && bar + 1 < url.size()) {
+            std::string suffix;
+            suffix.reserve(url.size() - bar - 1);
+            bool ascii = true;
+            for (size_t i = bar + 1; i < url.size(); ++i) {
+                const wchar_t ch = url[i];
+                if (ch < 32 || ch > 126) {
+                    ascii = false;
+                    break;
+                }
+                suffix.push_back(static_cast<char>(ch));
+            }
+            if (ascii && di_ics::ParseFeedColor(suffix, color)) {
+                explicitColor = true;
+                size_t keep = bar;
+                while (keep > 0 && (url[keep - 1] == L' ' || url[keep - 1] == L'\t')) --keep;
+                url.resize(keep);
+            }
+        }
+        if (url.size() < 8) return;
+        IcsFeedSpec spec;
+        spec.url = std::move(url);
+        spec.colorRgb = explicitColor ? color : di_ics::FeedPaletteColor(static_cast<int>(feeds.size()));
+        feeds.push_back(std::move(spec));
     };
     for (wchar_t ch : raw) {
         if (ch == L',' || ch == L'\n' || ch == L'\r') flush();
         else cur.push_back(ch);
     }
     flush();
-    return urls;
+    return feeds;
 }
 
 bool GcalCoversDay(const GcalSnapshot* snap, int year, int month, int day) {
@@ -8735,26 +9404,6 @@ bool GcalCoversDay(const GcalSnapshot* snap, int year, int month, int day) {
         if (cur >= start && cur < end) return true;
     }
     return false;
-}
-
-void GcalUpcoming(const GcalSnapshot& snap, int limit, std::vector<const GcalEvent*>& out) {
-    out.clear();
-    if (limit < 1) return;
-    const int64_t now = di_ics::UnixNow();
-    const di_ics::Civil today = di_ics::UnixUtcToLocal(now);
-    const di_ics::Civil horizon = di_ics::AddDays(di_ics::Civil{today.year, today.month, today.day, 0, 0, 0}, 21);
-    const int todayPack = today.year * 10000 + today.month * 100 + today.day;
-    for (const GcalEvent& ev : snap.events) {
-        if (ev.allDay) {
-            const int endPack = ev.spanEndYear * 10000 + ev.spanEndMonth * 100 + ev.spanEndDay;
-            if (endPack <= todayPack) continue;
-            if (horizon < di_ics::Civil{ev.spanYear, ev.spanMonth, ev.spanDay, 0, 0, 0}) continue;
-        } else if (ev.endUtc <= now || ev.startUtc > now + 21LL * 86400LL) {
-            continue;
-        }
-        out.push_back(&ev);
-        if (static_cast<int>(out.size()) >= limit) break;
-    }
 }
 
 // Same rule as di_ics::HeadsUpLabel, applied to the already-decoded snapshot so
@@ -8864,16 +9513,25 @@ std::string HttpGetAbsoluteUrl(const std::wstring& url) {
     return body;
 }
 
-void PublishGcalSnapshot(const std::vector<std::pair<std::wstring, std::string>>& feeds) {
-    if (feeds.empty()) {
+void PublishGcalSnapshot(const std::vector<IcsFeedSpec>& specs,
+                         const std::vector<std::pair<std::wstring, std::string>>& cache) {
+    if (specs.empty()) {
         std::lock_guard lock(g_stateMutex);
         g_state.gcal.reset();
         return;
     }
     auto snap = std::make_shared<GcalSnapshot>();
     const di_ics::ExpandWindow window = di_ics::WindowCoveringLocal(di_ics::UnixNow(), 70);
-    for (const auto& feed : feeds) {
-        for (const di_ics::Occurrence& occ : di_ics::ExpandCalendar(feed.second, window)) {
+    for (const IcsFeedSpec& spec : specs) {
+        const std::string* body = nullptr;
+        for (const auto& item : cache) {
+            if (item.first == spec.url) {
+                body = &item.second;
+                break;
+            }
+        }
+        if (!body) continue;
+        for (const di_ics::Occurrence& occ : di_ics::ExpandCalendar(*body, window)) {
             GcalEvent ev;
             ev.summary = Utf8ToWideFlat(occ.summary);
             ev.location = Utf8ToWideFlat(occ.location);
@@ -8891,6 +9549,7 @@ void PublishGcalSnapshot(const std::vector<std::pair<std::wstring, std::string>>
             ev.spanEndYear = occ.spanEndYear;
             ev.spanEndMonth = occ.spanEndMonth;
             ev.spanEndDay = occ.spanEndDay;
+            ev.colorRgb = occ.hasColor ? occ.colorRgb : spec.colorRgb;
             snap->events.push_back(std::move(ev));
         }
     }
@@ -8923,8 +9582,8 @@ DWORD WINAPI GcalThreadProc(void*) {
             raw = g_settings.gcalIcsUrls;
             refreshMin = g_settings.gcalRefreshMinutes;
         }
-        const std::vector<std::wstring> urls = SplitIcsUrls(raw);
-        if (urls.empty()) {
+        const std::vector<IcsFeedSpec> specs = SplitIcsUrls(raw);
+        if (specs.empty()) {
             cache.clear();
             {
                 std::lock_guard lock(g_stateMutex);
@@ -8935,29 +9594,32 @@ DWORD WINAPI GcalThreadProc(void*) {
         }
 
         cache.erase(std::remove_if(cache.begin(), cache.end(), [&](const auto& item) {
-                        return std::find(urls.begin(), urls.end(), item.first) == urls.end();
+                        for (const IcsFeedSpec& spec : specs) {
+                            if (spec.url == item.first) return false;
+                        }
+                        return true;
                     }),
                     cache.end());
 
         bool anyFresh = false;
-        for (const std::wstring& url : urls) {
+        for (const IcsFeedSpec& spec : specs) {
             if (WaitForSingleObject(g_stopEvent, 0) != WAIT_TIMEOUT) break;
-            const std::string body = HttpGetAbsoluteUrl(url);
+            const std::string body = HttpGetAbsoluteUrl(spec.url);
             if (body.empty()) continue;
             anyFresh = true;
             bool replaced = false;
             for (auto& item : cache) {
-                if (item.first == url) {
+                if (item.first == spec.url) {
                     item.second = body;
                     replaced = true;
                     break;
                 }
             }
-            if (!replaced) cache.emplace_back(url, body);
+            if (!replaced) cache.emplace_back(spec.url, body);
         }
 
         if (!cache.empty()) {
-            PublishGcalSnapshot(cache);
+            PublishGcalSnapshot(specs, cache);
         } else {
             // Every configured URL was dropped or has never loaded. Don't keep
             // showing a calendar the settings no longer point at.
@@ -14654,6 +15316,40 @@ struct CollapsedLyricLine {
     bool isTitle = false;  // true when this is the media-title fallback, not a lyric line
 };
 
+// One row in the day-detail side panel. Copied out of the snapshot so a
+// cross-fade can keep the previous day after the snapshot moves on.
+struct DayPanelItem {
+    std::wstring title;
+    std::wstring location;
+    std::wstring when;
+    uint32_t color = 0x039BE5;
+    bool due = false;
+    bool happening = false;
+    bool past = false;
+    float h = 26.0f;
+    int titleLines = 1;
+    float titleH = 16.0f;
+};
+
+// Content pixels. The panel window is this size times sizeScale, same as the island.
+struct DayPanelMetrics {
+    static constexpr float kMinW = 320.0f;
+    static constexpr float kMaxW = 460.0f;
+    static constexpr float kMaxH = 360.0f;
+    static constexpr float kClosedW = 52.0f;
+    static constexpr float kClosedH = 36.0f;
+    static constexpr float kPadX = 16.0f;
+    static constexpr float kHeaderTop = 12.0f;
+    static constexpr float kHeaderH = 22.0f;
+    static constexpr float kListTop = 44.0f;
+    static constexpr float kListBottom = 12.0f;
+    static constexpr float kRow = 26.0f;
+    static constexpr float kRowLoc = 38.0f;
+    static constexpr float kGap = 2.0f;
+    static constexpr float kTimeW = 96.0f;
+    static constexpr float kMinH = kListTop + kRow + kListBottom;
+};
+
 class Renderer {
    public:
     bool Initialize(HWND hwnd) {
@@ -14693,6 +15389,9 @@ class Renderer {
     bool Render(const SharedState& state, const Settings& settings, const Activity& primary,
                 const std::optional<Activity>& secondary, float width, float height,
                 float nudge, bool hover, bool pinned, double now) {
+        // A collapsed or non-calendar frame never reaches the month grid, so a
+        // stale "grid is on screen" flag must not keep the day panel open.
+        g_gcalGridValid.store(false, std::memory_order_relaxed);
         EnsureTextFormats(settings.sizeScale, settings.fontFamily, settings.textScale);
 
         width = std::max(width, 0.0f);
@@ -14861,6 +15560,7 @@ class Renderer {
     }
 
     void Shutdown() {
+        DestroyDayPanel();
         ReleaseCachedResources();
         marqueeTitleCache_.layout.Reset();
         marqueeArtistCache_.layout.Reset();
@@ -14903,6 +15603,10 @@ class Renderer {
         idleTextFormat_.Reset();
         calDayLargeFormat_.Reset();
         calGridFormat_.Reset();
+        agendaTitleFormat_.Reset();
+        agendaTimeFormat_.Reset();
+        agendaMetaFormat_.Reset();
+        agendaDayFormat_.Reset();
         dwriteFactory_.Reset();
         skipTriFull_.Reset();
         skipTriNotch_.Reset();
@@ -15041,6 +15745,875 @@ class Renderer {
         metrics.sectionWidth = section;
         metrics.totalWidth = MediaPillLayout::kBaseWidth + section;
         return metrics;
+    }
+
+    void ReleaseDrawBrushes() {
+        brushPool_.clear();
+        layerPool_.clear();
+        brushPoolUsed_ = 0;
+        layerPoolUsed_ = 0;
+        raisedBrush_.Reset();
+        raisedStrongBrush_.Reset();
+        accentBrush_.Reset();
+        textBrush_.Reset();
+        mutedBrush_.Reset();
+        tintBrush_.Reset();
+        shadowBrush_.Reset();
+        depthGrad_ = LinearGradientSlot{};
+        trackGrad_ = LinearGradientSlot{};
+        bloomGrad_ = RadialGradientSlot{};
+        swapGroupLayer_.Reset();
+    }
+
+    void BindSurfaceBrushes(const Settings& settings) {
+        pillBgColor_ = settings.pillBgColor;
+        settingsOpacity_ = settings.pillOpacity;
+        D2D1_COLOR_F primary = settings.textPrimaryColor;
+        primary.a = 0.98f;
+        if (!textBrush_) target_->CreateSolidColorBrush(primary, &textBrush_);
+        else textBrush_->SetColor(primary);
+        D2D1_COLOR_F secondary = settings.textSecondaryColor;
+        secondary.a = 0.90f;
+        if (!mutedBrush_) target_->CreateSolidColorBrush(secondary, &mutedBrush_);
+        else mutedBrush_->SetColor(secondary);
+        if (!accentBrush_) target_->CreateSolidColorBrush(currentAccent_, &accentBrush_);
+        else accentBrush_->SetColor(currentAccent_);
+        D2D1_COLOR_F tintColor = D2D1::ColorF(0.010f, 0.010f, 0.012f, settings.tintOpacity);
+        if (!tintBrush_) target_->CreateSolidColorBrush(tintColor, &tintBrush_);
+        else tintBrush_->SetColor(tintColor);
+        if (!shadowBrush_) target_->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0, 0.70f), &shadowBrush_);
+        BuildMaterialTokens(settings);
+    }
+
+    bool EnsurePanelBitmap(int logicalW, int logicalH) {
+        if (logicalW < 1) logicalW = 1;
+        if (logicalH < 1) logicalH = 1;
+        if (panelDib_ && logicalW <= panelCapW_ && logicalH <= panelCapH_) {
+            panelBmpW_ = logicalW;
+            panelBmpH_ = logicalH;
+            return true;
+        }
+        const int width = ((logicalW + 63) / 64) * 64 + 64;
+        const int height = ((logicalH + 31) / 32) * 32 + 32;
+        if (panelOld_ && panelDc_) {
+            SelectObject(panelDc_, panelOld_);
+            panelOld_ = nullptr;
+        }
+        if (panelDib_) {
+            DeleteObject(panelDib_);
+            panelDib_ = nullptr;
+        }
+        if (!panelDc_) {
+            HDC screen = GetDC(nullptr);
+            panelDc_ = CreateCompatibleDC(screen);
+            ReleaseDC(nullptr, screen);
+            if (!panelDc_) return false;
+        }
+        BITMAPINFO bi = {};
+        bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+        bi.bmiHeader.biWidth = width;
+        bi.bmiHeader.biHeight = -height;
+        bi.bmiHeader.biPlanes = 1;
+        bi.bmiHeader.biBitCount = 32;
+        bi.bmiHeader.biCompression = BI_RGB;
+        void* bits = nullptr;
+        panelDib_ = CreateDIBSection(panelDc_, &bi, DIB_RGB_COLORS, &bits, nullptr, 0);
+        if (!panelDib_) return false;
+        panelOld_ = static_cast<HBITMAP>(SelectObject(panelDc_, panelDib_));
+        panelCapW_ = width;
+        panelCapH_ = height;
+        panelBmpW_ = logicalW;
+        panelBmpH_ = logicalH;
+        return true;
+    }
+
+    bool EnsureDayPanelWindow() {
+        if (g_dayPanelHwnd && IsWindow(g_dayPanelHwnd)) return true;
+        g_dayPanelHwnd = nullptr;
+        HINSTANCE inst = GetModuleHandleW(nullptr);
+        if (!g_dayPanelClassRegistered) {
+            WNDCLASSEXW wc = {};
+            wc.cbSize = sizeof(wc);
+            wc.lpfnWndProc = DayPanelWndProc;
+            wc.hInstance = inst;
+            wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+            wc.lpszClassName = kDayPanelClass;
+            if (!RegisterClassExW(&wc) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) return false;
+            g_dayPanelClassRegistered = true;
+        }
+        g_dayPanelHwnd = CreateWindowExW(
+            WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+            kDayPanelClass, L"", WS_POPUP, 0, 0, 16, 16, nullptr, nullptr, inst, nullptr);
+        return g_dayPanelHwnd != nullptr;
+    }
+
+    void DestroyDayPanel() {
+        g_dayPanelHitLive = false;
+        g_dayPanelPointer.store(false, std::memory_order_relaxed);
+        g_dayPanelWheel.store(0.0f, std::memory_order_relaxed);
+        DwmBackdrop::HidePanel();
+        if (g_dayPanelHwnd) {
+            if (IsWindow(g_dayPanelHwnd)) DestroyWindow(g_dayPanelHwnd);
+            g_dayPanelHwnd = nullptr;
+        }
+        if (g_dayPanelClassRegistered) {
+            UnregisterClassW(kDayPanelClass, GetModuleHandleW(nullptr));
+            g_dayPanelClassRegistered = false;
+        }
+        if (panelTarget_) {
+            // Dropping the target while target_ still aliases it would free the
+            // island's render target on the next brush reset.
+            if (target_ == panelTarget_) target_.Reset();
+            panelTarget_.Reset();
+        }
+        if (panelOld_ && panelDc_) {
+            SelectObject(panelDc_, panelOld_);
+            panelOld_ = nullptr;
+        }
+        if (panelDib_) {
+            DeleteObject(panelDib_);
+            panelDib_ = nullptr;
+        }
+        if (panelDc_) {
+            DeleteDC(panelDc_);
+            panelDc_ = nullptr;
+        }
+        panelBmpW_ = panelBmpH_ = panelCapW_ = panelCapH_ = 0;
+        dayEngaged_ = false;
+        dayOpen_ = -1;
+        dayKey_ = 0;
+    }
+
+    void ParkDayPanel() {
+        dayOpen_ = -1;
+        dayEngaged_ = false;
+        dayHotSince_ = -1.0;
+        dayLeaveSince_ = -1.0;
+        dayFade_.Reset(0.0f);
+        dayW_.Reset(0.0f);
+        dayH_.Reset(0.0f);
+        g_dayPanelHitLive = false;
+        g_dayPanelPointer.store(false, std::memory_order_relaxed);
+        g_dayPanelWheel.store(0.0f, std::memory_order_relaxed);
+        if (g_dayPanelHwnd && IsWindow(g_dayPanelHwnd) && IsWindowVisible(g_dayPanelHwnd)) {
+            ShowWindow(g_dayPanelHwnd, SW_HIDE);
+        }
+        DwmBackdrop::HidePanel();
+    }
+
+    void HideDayPanelSettled() {
+        g_dayPanelHitLive = false;
+        g_dayPanelPointer.store(false, std::memory_order_relaxed);
+        if (g_dayPanelHwnd && IsWindow(g_dayPanelHwnd) && IsWindowVisible(g_dayPanelHwnd)) {
+            ShowWindow(g_dayPanelHwnd, SW_HIDE);
+        }
+        DwmBackdrop::HidePanel();
+        dayEngaged_ = false;
+    }
+
+    // Draws the side panel into its own layered window. target_ is swapped for
+    // the duration so DrawPillSurface / the brush pool land on this target,
+    // then restored. EnsureBrushes is not called: that would step the accent
+    // lerp a second time this frame.
+    bool PresentDayPanel(const Settings& settings, float screenLeft, float screenTop, float reveal) {
+        if (!d2dFactory_ || !EnsureDayPanelWindow()) return false;
+        if (!panelTarget_) {
+            D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+                D2D1_RENDER_TARGET_TYPE_DEFAULT,
+                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+                0.0f, 0.0f, D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE);
+            if (FAILED(d2dFactory_->CreateDCRenderTarget(&props, &panelTarget_)) || !panelTarget_) {
+                return false;
+            }
+        }
+        EnsureTextFormats(settings.sizeScale, settings.fontFamily, settings.textScale);
+
+        const float scale = std::max(settings.sizeScale, 0.01f);
+        const float pillW = std::max(dayW_.value, 1.0f);
+        const float pillH = std::max(dayH_.value, 1.0f);
+        const int winW = std::max(1, static_cast<int>(std::ceil(pillW + kRenderPadX * 2.0f)));
+        const int winH = std::max(1, static_cast<int>(std::ceil(pillH + kRenderPadY * 2.0f)));
+        if (!EnsurePanelBitmap(winW, winH)) return false;
+
+        const int originX = static_cast<int>(std::lround(screenLeft - kRenderPadX));
+        const int originY = static_cast<int>(std::lround(screenTop - kRenderPadY));
+        const float pillLeft = screenLeft - static_cast<float>(originX);
+        const float pillTop = screenTop - static_cast<float>(originY);
+        const D2D1_RECT_F pill = D2D1::RectF(pillLeft, pillTop, pillLeft + pillW, pillTop + pillH);
+
+        float radius = settings.w11Style ? 8.0f * scale : pillH * 0.5f;
+        if (settings.notchStyle) radius = 16.0f * scale;
+        else if (!settings.w11Style) radius = std::min(radius, 44.0f * scale);
+        radius = std::min(radius, std::min(pillW, pillH) * 0.5f);
+
+        ComPtr<ID2D1DCRenderTarget> savedTarget = target_;
+        target_ = panelTarget_;
+        ReleaseDrawBrushes();
+
+        RECT rc{0, 0, panelBmpW_, panelBmpH_};
+        HRESULT hr = target_->BindDC(panelDc_, &rc);
+        bool presented = false;
+        if (SUCCEEDED(hr)) {
+            target_->BeginDraw();
+            target_->SetTransform(D2D1::Matrix3x2F::Identity());
+            target_->Clear(D2D1::ColorF(0, 0.0f));
+            BeginFrameResources();
+            BindSurfaceBrushes(settings);
+
+            const float savedOpacity = settingsOpacity_;
+            settingsOpacity_ = savedOpacity * Clamp(reveal, 0.0f, 1.0f);
+            DrawSoftShadow(pill, radius);
+            settingsOpacity_ = savedOpacity;
+            DrawPillSurface(pill, radius, IslandKind::Idle, settings);
+
+            if (reveal > 0.02f) {
+                D2D1_MATRIX_3X2_F oldTransform;
+                target_->GetTransform(&oldTransform);
+                const D2D1_POINT_2F center = D2D1::Point2F((pill.left + pill.right) * 0.5f,
+                                                           (pill.top + pill.bottom) * 0.5f);
+                target_->SetTransform(D2D1::Matrix3x2F::Scale(scale, scale, center) * oldTransform);
+                const float inv = 1.0f / scale;
+                const float unW = pillW * inv;
+                const float unH = pillH * inv;
+                const D2D1_RECT_F content = D2D1::RectF(center.x - unW * 0.5f, center.y - unH * 0.5f,
+                                                        center.x + unW * 0.5f, center.y + unH * 0.5f);
+
+                target_->PushAxisAlignedClip(content, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+                ID2D1Layer* revealLayer = nullptr;
+                if (reveal < 0.995f) {
+                    revealLayer = AcquireLayer();
+                    if (revealLayer) {
+                        target_->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(), nullptr,
+                                                                  D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+                                                                  D2D1::IdentityMatrix(), reveal, nullptr,
+                                                                  D2D1_LAYER_OPTIONS_NONE),
+                                           revealLayer);
+                    }
+                }
+
+                IDWriteTextFormat* titleFmt = agendaTitleFormat_ ? agendaTitleFormat_.Get() : textFormat_.Get();
+                IDWriteTextFormat* timeFmt = agendaTimeFormat_ ? agendaTimeFormat_.Get() : textFormat_.Get();
+                IDWriteTextFormat* metaFmt = agendaMetaFormat_ ? agendaMetaFormat_.Get() : smallTextFormat_.Get();
+                IDWriteTextFormat* dayFmt = agendaDayFormat_ ? agendaDayFormat_.Get() : boldTextFormat_.Get();
+
+                auto drawHeader = [&](const std::wstring& header, const std::wstring& badge, float opacity) {
+                    if (opacity <= 0.01f || header.empty()) return;
+                    ID2D1Layer* layer = nullptr;
+                    if (opacity < 0.995f) {
+                        layer = AcquireLayer();
+                        if (layer) {
+                            target_->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(), nullptr,
+                                                                      D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+                                                                      D2D1::IdentityMatrix(), opacity, nullptr,
+                                                                      D2D1_LAYER_OPTIONS_NONE),
+                                               layer);
+                        }
+                    }
+                    const float badgeW = badge.empty() ? 0.0f : 72.0f;
+                    const float dateRight = content.right - DayPanelMetrics::kPadX - (badgeW > 0.0f ? badgeW + 8.0f : 0.0f);
+                    if (dayFmt && textBrush_) {
+                        textBrush_->SetOpacity(0.96f);
+                        target_->DrawTextW(header.c_str(), static_cast<UINT32>(header.size()), dayFmt,
+                                           D2D1::RectF(content.left + DayPanelMetrics::kPadX,
+                                                       content.top + DayPanelMetrics::kHeaderTop,
+                                                       dateRight,
+                                                       content.top + DayPanelMetrics::kHeaderTop + DayPanelMetrics::kHeaderH),
+                                           textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    }
+                    if (!badge.empty() && metaFmt && raisedBrush_) {
+                        const float chipH = 18.0f;
+                        const float chipT = content.top + DayPanelMetrics::kHeaderTop +
+                                            (DayPanelMetrics::kHeaderH - chipH) * 0.5f;
+                        const D2D1_RECT_F chip = D2D1::RectF(content.right - DayPanelMetrics::kPadX - badgeW, chipT,
+                                                            content.right - DayPanelMetrics::kPadX, chipT + chipH);
+                        target_->FillRoundedRectangle(D2D1::RoundedRect(chip, chipH * 0.5f, chipH * 0.5f),
+                                                      raisedBrush_.Get());
+                        D2D1_COLOR_F accent = currentAccent_;
+                        accent.a = 0.95f * settingsOpacity_;
+                        if (ID2D1SolidColorBrush* chipText = AcquireBrush(accent)) {
+                            metaFmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+                            metaFmt->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+                            target_->DrawTextW(badge.c_str(), static_cast<UINT32>(badge.size()), metaFmt, chip,
+                                               chipText, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                            metaFmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+                            metaFmt->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                        }
+                    }
+                    if (layer) target_->PopLayer();
+                };
+
+                drawHeader(dayHeader_, dayBadge_, dayMix_);
+                if (dayMix_ < 0.999f) drawHeader(dayPrevHeader_, dayPrevBadge_, 1.0f - dayMix_);
+
+                if (ID2D1SolidColorBrush* hr = AcquireBrush(
+                        WithAlpha(material_.hairline, material_.hairline.a * settingsOpacity_))) {
+                    const float y = content.top + DayPanelMetrics::kListTop - 6.0f;
+                    target_->DrawLine(D2D1::Point2F(content.left + DayPanelMetrics::kPadX, y),
+                                      D2D1::Point2F(content.right - DayPanelMetrics::kPadX, y), hr, 1.0f);
+                }
+
+                const D2D1_RECT_F list = D2D1::RectF(content.left,
+                                                    content.top + DayPanelMetrics::kListTop,
+                                                    content.right,
+                                                    content.bottom - DayPanelMetrics::kListBottom);
+                const bool listFits = list.bottom > list.top + 4.0f;
+                if (listFits) {
+                target_->PushAxisAlignedClip(list, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+                auto drawRows = [&](const std::vector<DayPanelItem>& items, bool empty, float opacity) {
+                    if (opacity <= 0.01f) return;
+                    ID2D1Layer* layer = nullptr;
+                    if (opacity < 0.995f) {
+                        layer = AcquireLayer();
+                        if (layer) {
+                            target_->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(), nullptr,
+                                                                      D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+                                                                      D2D1::IdentityMatrix(), opacity, nullptr,
+                                                                      D2D1_LAYER_OPTIONS_NONE),
+                                               layer);
+                        }
+                    }
+                    const float timeLeft = content.left + DayPanelMetrics::kPadX;
+                    const float titleLeft = timeLeft + DayPanelMetrics::kTimeW;
+                    const float titleRight = content.right - DayPanelMetrics::kPadX;
+                    if (empty || items.empty()) {
+                        if (metaFmt && mutedBrush_) {
+                            mutedBrush_->SetOpacity(0.48f);
+                            const std::wstring quiet = Loc(L"Nothing scheduled");
+                            target_->DrawTextW(quiet.c_str(), static_cast<UINT32>(quiet.size()), metaFmt,
+                                               D2D1::RectF(timeLeft, list.top, titleRight, list.top + DayPanelMetrics::kRow),
+                                               mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        }
+                    } else {
+                        float y = list.top - dayScroll_;
+                        for (const DayPanelItem& item : items) {
+                            const float rowTop = y;
+                            const float rowH = item.h;
+                            y += rowH + DayPanelMetrics::kGap;
+                            if (rowTop + rowH < list.top - 8.0f || rowTop > list.bottom + 8.0f) continue;
+                            const float fade = item.past ? 0.38f : 1.0f;
+                            const float titleBand = item.titleLines > 1
+                                ? item.titleH / static_cast<float>(item.titleLines)
+                                : (item.location.empty() ? rowH : item.titleH);
+                            if (item.happening) {
+                                D2D1_COLOR_F wash = GcalRgb(item.color, 0.22f * fade * settingsOpacity_);
+                                if (ID2D1SolidColorBrush* washBrush = AcquireBrush(wash)) {
+                                    target_->FillRoundedRectangle(
+                                        D2D1::RoundedRect(D2D1::RectF(content.left + 8.0f, rowTop + 1.0f,
+                                                                      titleRight, rowTop + rowH - 1.0f),
+                                                          6.0f, 6.0f),
+                                        washBrush);
+                                }
+                            }
+                            D2D1_COLOR_F bar = GcalRgb(item.color, fade * settingsOpacity_);
+                            if (ID2D1SolidColorBrush* barBrush = AcquireBrush(bar)) {
+                                const float barH = 12.0f;
+                                const float barTop = rowTop + (titleBand - barH) * 0.5f;
+                                target_->FillRoundedRectangle(
+                                    D2D1::RoundedRect(D2D1::RectF(timeLeft, barTop, timeLeft + 3.0f, barTop + barH),
+                                                      1.5f, 1.5f),
+                                    barBrush);
+                            }
+                            const float timeInset = 8.0f;
+                            const D2D1_RECT_F timeRect = D2D1::RectF(timeLeft + timeInset, rowTop,
+                                                                    timeLeft + DayPanelMetrics::kTimeW - 4.0f,
+                                                                    rowTop + titleBand);
+                            const bool coloredTime = item.due || item.happening;
+                            if (coloredTime && timeFmt) {
+                                D2D1_COLOR_F c = GcalRgb(item.color, fade * settingsOpacity_);
+                                if (ID2D1SolidColorBrush* timeColor = AcquireBrush(c)) {
+                                    DWRITE_TEXT_METRICS tm{};
+                                    if (auto layout = MakeLineLayout(item.when, timeFmt, DayPanelMetrics::kTimeW - timeInset - 4.0f,
+                                                                     &tm, true)) {
+                                        target_->DrawTextLayout(D2D1::Point2F(timeRect.left, rowTop + 1.0f), layout.Get(),
+                                                                timeColor);
+                                    }
+                                }
+                            } else if (timeFmt && mutedBrush_) {
+                                mutedBrush_->SetOpacity(0.78f * fade);
+                                DWRITE_TEXT_METRICS tm{};
+                                if (auto layout = MakeLineLayout(item.when, timeFmt, DayPanelMetrics::kTimeW - timeInset - 4.0f,
+                                                                 &tm, true)) {
+                                    target_->DrawTextLayout(D2D1::Point2F(timeRect.left, rowTop + 1.0f), layout.Get(),
+                                                            mutedBrush_.Get());
+                                }
+                            }
+                            if (titleFmt && textBrush_) {
+                                textBrush_->SetOpacity(0.96f * fade);
+                                const float titleW = std::max(12.0f, titleRight - titleLeft);
+                                DWRITE_TEXT_METRICS tm{};
+                                ComPtr<IDWriteTextLayout> titleLayout = item.titleLines > 1
+                                    ? MakeWrapLayout(item.title, titleFmt, titleW, 2)
+                                    : MakeLineLayout(item.title, titleFmt, titleW, &tm, true);
+                                if (titleLayout) {
+                                    target_->DrawTextLayout(D2D1::Point2F(titleLeft, rowTop), titleLayout.Get(),
+                                                            textBrush_.Get());
+                                }
+                            }
+                            if (!item.location.empty() && metaFmt && mutedBrush_) {
+                                mutedBrush_->SetOpacity(0.62f * fade);
+                                DWRITE_TEXT_METRICS tm{};
+                                const float locTop = rowTop + (item.titleLines > 1 ? item.titleH + 2.0f : 16.0f);
+                                if (auto layout = MakeLineLayout(item.location, metaFmt,
+                                                                 std::max(12.0f, titleRight - titleLeft), &tm, true)) {
+                                    target_->DrawTextLayout(D2D1::Point2F(titleLeft, locTop), layout.Get(),
+                                                            mutedBrush_.Get());
+                                }
+                            }
+                        }
+                    }
+                    if (layer) target_->PopLayer();
+                };
+
+                drawRows(dayItems_, dayEmpty_, dayMix_);
+                if (dayMix_ < 0.999f) drawRows(dayPrevItems_, dayPrevEmpty_, 1.0f - dayMix_);
+                target_->PopAxisAlignedClip();
+                }
+
+                auto fadeEdge = [&](bool topEdge) {
+                    const float fade = 16.0f;
+                    const D2D1_RECT_F band = topEdge
+                        ? D2D1::RectF(list.left, list.top, list.right, list.top + fade)
+                        : D2D1::RectF(list.left, list.bottom - fade, list.right, list.bottom);
+                    D2D1_COLOR_F solid = material_.base;
+                    solid.a = Clamp(solid.a * settingsOpacity_, 0.0f, 1.0f);
+                    D2D1_COLOR_F clear = solid;
+                    clear.a = 0.0f;
+                    D2D1_GRADIENT_STOP stops[2];
+                    if (topEdge) {
+                        stops[0] = {0.0f, solid};
+                        stops[1] = {1.0f, clear};
+                    } else {
+                        stops[0] = {0.0f, clear};
+                        stops[1] = {1.0f, solid};
+                    }
+                    ComPtr<ID2D1GradientStopCollection> stopsColl;
+                    if (FAILED(target_->CreateGradientStopCollection(stops, 2, D2D1_GAMMA_2_2,
+                                                                     D2D1_EXTEND_MODE_CLAMP, &stopsColl)) ||
+                        !stopsColl) {
+                        return;
+                    }
+                    ComPtr<ID2D1LinearGradientBrush> fadeBrush;
+                    if (FAILED(target_->CreateLinearGradientBrush(
+                            D2D1::LinearGradientBrushProperties(D2D1::Point2F(band.left, band.top),
+                                                                D2D1::Point2F(band.left, band.bottom)),
+                            stopsColl.Get(), &fadeBrush)) ||
+                        !fadeBrush) {
+                        return;
+                    }
+                    target_->FillRectangle(band, fadeBrush.Get());
+                };
+                if (listFits && dayScroll_ > 0.5f) fadeEdge(true);
+                if (listFits && dayMaxScroll_ - dayScroll_ > 0.5f) fadeEdge(false);
+
+                if (revealLayer) target_->PopLayer();
+                target_->PopAxisAlignedClip();
+                target_->SetTransform(oldTransform);
+            }
+
+            hr = target_->EndDraw();
+            presented = SUCCEEDED(hr);
+        }
+
+        ReleaseDrawBrushes();
+        target_ = savedTarget;
+        if (FAILED(hr)) panelTarget_.Reset();
+        if (!presented) return false;
+
+        const BYTE alpha = static_cast<BYTE>(Clamp(settings.pillOpacity, 0.35f, 1.0f) *
+                                             Clamp(dayFade_.value, 0.0f, 1.0f) * 255.0f);
+        POINT src = {0, 0};
+        SIZE size = {panelBmpW_, panelBmpH_};
+        POINT dst = {originX, originY};
+        BLENDFUNCTION blend = {};
+        blend.BlendOp = AC_SRC_OVER;
+        blend.SourceConstantAlpha = alpha;
+        blend.AlphaFormat = AC_SRC_ALPHA;
+        UPDATELAYEREDWINDOWINFO info = {};
+        info.cbSize = sizeof(info);
+        info.pptDst = &dst;
+        info.psize = &size;
+        info.hdcSrc = panelDc_;
+        info.pptSrc = &src;
+        info.pblend = &blend;
+        info.dwFlags = ULW_ALPHA;
+        if (!UpdateLayeredWindowIndirect(g_dayPanelHwnd, &info)) return false;
+
+        const bool stacked = GetWindow(g_hwnd, GW_HWNDNEXT) == g_dayPanelHwnd;
+        RECT wr{};
+        GetWindowRect(g_dayPanelHwnd, &wr);
+        if (!stacked || wr.left != originX || wr.top != originY ||
+            (wr.right - wr.left) != winW || (wr.bottom - wr.top) != winH ||
+            !IsWindowVisible(g_dayPanelHwnd)) {
+            SetWindowPos(g_dayPanelHwnd, g_hwnd, originX, originY, winW, winH,
+                         SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        }
+
+        g_dayPanelHit.left = static_cast<LONG>(std::floor(screenLeft));
+        g_dayPanelHit.top = static_cast<LONG>(std::floor(screenTop));
+        g_dayPanelHit.right = static_cast<LONG>(std::ceil(screenLeft + pillW));
+        g_dayPanelHit.bottom = static_cast<LONG>(std::ceil(screenTop + pillH));
+        g_dayPanelHitLive = true;
+
+        DwmBackdrop::SyncPanel(g_dayPanelHwnd, screenLeft, screenTop, screenLeft + pillW, screenTop + pillH,
+                               radius, settings.backdropMaterial, pillBgColor_, settings.backdropTint);
+        return true;
+    }
+
+    // True while the panel's own springs or cross-fade are still moving, so the
+    // frame pacer stays on vsync. A settled panel keeps its last pixels.
+    bool TickDayPanel(const SharedState& state, const RECT& islandPill, float dt, double now, bool monthLive) {
+        if (!g_hwnd || !IsWindow(g_hwnd)) {
+            if (dayEngaged_ || g_dayPanelHwnd) HideDayPanelSettled();
+            return false;
+        }
+        const Settings settings = GetSettingsCopy();
+        const float scale = std::max(settings.sizeScale, 0.01f);
+        const bool onPanel = g_dayPanelPointer.load(std::memory_order_relaxed) && g_dayPanelHwnd &&
+                             IsWindowVisible(g_dayPanelHwnd);
+
+        int cell = -1;
+        int cellYear = 0;
+        int cellMonth = 0;
+        if (monthLive) {
+            cell = g_gcalHoverDay.load(std::memory_order_relaxed);
+            cellYear = g_gcalHoverYear.load(std::memory_order_relaxed);
+            cellMonth = g_gcalHoverMonth.load(std::memory_order_relaxed);
+            if (cell < 1) cell = -1;
+        }
+
+        if (!monthLive) {
+            dayOpen_ = -1;
+            dayHotSince_ = -1.0;
+            dayLeaveSince_ = -1.0;
+        } else if (cell > 0) {
+            dayLeaveSince_ = -1.0;
+            if (dayHotSince_ < 0.0) dayHotSince_ = now;
+            const bool already = dayEngaged_ && dayFade_.value > 0.05f;
+            if (already || (now - dayHotSince_) >= 0.10) {
+                dayOpen_ = cell;
+                dayYear_ = cellYear;
+                dayMonth_ = cellMonth;
+            }
+        } else if (onPanel && dayOpen_ > 0) {
+            dayLeaveSince_ = -1.0;
+            dayHotSince_ = now;
+        } else {
+            dayHotSince_ = -1.0;
+            if (dayOpen_ > 0) {
+                if (dayLeaveSince_ < 0.0) dayLeaveSince_ = now;
+                if ((now - dayLeaveSince_) >= 0.15) dayOpen_ = -1;
+            }
+        }
+
+        const bool open = dayOpen_ > 0;
+        float contentTarget = DayPanelMetrics::kClosedH;
+        float fittedContentW = DayPanelMetrics::kMinW;
+        if (!open && !dayEngaged_) return false;
+
+        if (open && !dayEngaged_) {
+            dayW_.Reset(DayPanelMetrics::kClosedW * scale);
+            dayH_.Reset(DayPanelMetrics::kClosedH * scale);
+            dayFade_.Reset(0.0f);
+            dayEngaged_ = true;
+            dayKey_ = 0;
+            dayMix_ = 1.0f;
+            dayScroll_ = 0.0f;
+            dayPrevItems_.clear();
+            dayPrevHeader_.clear();
+            dayPrevBadge_.clear();
+            dayPrevEmpty_ = true;
+        }
+
+        if (open) {
+            const int key = dayYear_ * 10000 + dayMonth_ * 100 + dayOpen_;
+            if (dayKey_ != 0 && key != dayKey_) {
+                dayPrevItems_ = dayItems_;
+                dayPrevHeader_ = dayHeader_;
+                dayPrevBadge_ = dayBadge_;
+                dayPrevEmpty_ = dayEmpty_;
+                dayMix_ = 0.0f;
+                dayMixStart_ = now;
+                dayScroll_ = 0.0f;
+                g_dayPanelWheel.store(0.0f, std::memory_order_relaxed);
+            }
+            dayKey_ = key;
+
+            dayItems_.clear();
+            dayEmpty_ = true;
+            SYSTEMTIME headerSt{};
+            headerSt.wYear = static_cast<WORD>(dayYear_);
+            headerSt.wMonth = static_cast<WORD>(dayMonth_);
+            headerSt.wDay = static_cast<WORD>(dayOpen_);
+            wchar_t dateBuf[64] = {};
+            if (GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &headerSt, L"ddd, MMM d", dateBuf,
+                                ARRAYSIZE(dateBuf), nullptr) > 0) {
+                dayHeader_ = dateBuf;
+            } else {
+                dayHeader_.clear();
+            }
+            const di_ics::Civil today = di_ics::UnixUtcToLocal(di_ics::UnixNow());
+            const di_ics::Civil tomorrow =
+                di_ics::AddDays(di_ics::Civil{today.year, today.month, today.day, 0, 0, 0}, 1);
+            dayBadge_.clear();
+            if (dayYear_ == today.year && dayMonth_ == today.month && dayOpen_ == today.day) {
+                dayBadge_ = Loc(L"Today");
+            } else if (dayYear_ == tomorrow.year && dayMonth_ == tomorrow.month && dayOpen_ == tomorrow.day) {
+                dayBadge_ = Loc(L"Tomorrow");
+            }
+
+            const GcalSnapshot* snap = state.gcal.get();
+            const int64_t nowUtc = di_ics::UnixNow();
+            const int cur = key;
+            struct Row {
+                int index;
+                bool allDay;
+                bool due;
+                bool happening;
+                bool past;
+                int hour;
+                int minute;
+                int64_t startUtc;
+            };
+            std::vector<Row> rows;
+            if (snap) {
+                rows.reserve(snap->events.size());
+                for (int i = 0; i < static_cast<int>(snap->events.size()); ++i) {
+                    const GcalEvent& ev = snap->events[static_cast<size_t>(i)];
+                    const int start = ev.spanYear * 10000 + ev.spanMonth * 100 + ev.spanDay;
+                    const int end = ev.spanEndYear * 10000 + ev.spanEndMonth * 100 + ev.spanEndDay;
+                    if (cur < start || cur >= end) continue;
+                    di_ics::AgendaInput mark;
+                    mark.allDay = ev.allDay;
+                    mark.startUtc = ev.startUtc;
+                    mark.endUtc = ev.endUtc;
+                    mark.hour = ev.hour;
+                    mark.minute = ev.minute;
+                    Row row;
+                    row.index = i;
+                    row.allDay = ev.allDay;
+                    row.hour = ev.hour;
+                    row.minute = ev.minute;
+                    row.startUtc = ev.startUtc;
+                    row.due = di_ics::AgendaIsDeadline(mark);
+                    row.happening = false;
+                    row.past = false;
+                    if (!ev.allDay && row.due) {
+                        row.past = nowUtc >= ev.startUtc;
+                    } else if (!ev.allDay) {
+                        if (ev.endUtc > ev.startUtc && ev.startUtc <= nowUtc && nowUtc < ev.endUtc) {
+                            row.happening = true;
+                        } else if (ev.endUtc <= nowUtc) {
+                            row.past = true;
+                        }
+                    }
+                    rows.push_back(row);
+                }
+            }
+            std::sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) {
+                if (a.allDay != b.allDay) return a.allDay && !b.allDay;
+                if (a.hour != b.hour) return a.hour < b.hour;
+                if (a.minute != b.minute) return a.minute < b.minute;
+                if (a.startUtc != b.startUtc) return a.startUtc < b.startUtc;
+                return a.index < b.index;
+            });
+            dayEmpty_ = rows.empty();
+            if (snap) {
+                dayItems_.reserve(rows.size());
+                for (const Row& row : rows) {
+                    const GcalEvent& ev = snap->events[static_cast<size_t>(row.index)];
+                    DayPanelItem item;
+                    item.title = ev.summary;
+                    item.location = ev.location;
+                    item.color = ev.colorRgb;
+                    item.due = row.due;
+                    item.happening = row.happening;
+                    item.past = row.past;
+                    if (ev.allDay) {
+                        item.when = Loc(L"All day");
+                    } else {
+                        SYSTEMTIME whenSt{};
+                        whenSt.wYear = static_cast<WORD>(ev.year);
+                        whenSt.wMonth = static_cast<WORD>(ev.month);
+                        whenSt.wDay = static_cast<WORD>(ev.day);
+                        whenSt.wHour = static_cast<WORD>(ev.hour);
+                        whenSt.wMinute = static_cast<WORD>(ev.minute);
+                        item.when = FormatIslandTime(whenSt, settings.clockFollowSystem, settings.use24HourClock, false);
+                        if (row.due) item.when = std::wstring(Loc(L"Due")) + L" " + item.when;
+                    }
+                    dayItems_.push_back(std::move(item));
+                }
+            }
+
+            EnsureTextFormats(settings.sizeScale, settings.fontFamily, settings.textScale);
+            IDWriteTextFormat* titleFmt = agendaTitleFormat_ ? agendaTitleFormat_.Get() : textFormat_.Get();
+            IDWriteTextFormat* metaFmt = agendaMetaFormat_ ? agendaMetaFormat_.Get() : smallTextFormat_.Get();
+            IDWriteTextFormat* dayFmt = agendaDayFormat_ ? agendaDayFormat_.Get() : boldTextFormat_.Get();
+
+            float longest = 0.0f;
+            for (const DayPanelItem& item : dayItems_) {
+                longest = std::max(longest, MeasureUnwrappedWidth(item.title, titleFmt));
+                longest = std::max(longest, MeasureUnwrappedWidth(item.location, metaFmt));
+            }
+            if (dayEmpty_) {
+                const float quiet = MeasureUnwrappedWidth(Loc(L"Nothing scheduled"), metaFmt);
+                longest = std::max(longest, std::max(0.0f, quiet - DayPanelMetrics::kTimeW));
+            }
+            float header = MeasureUnwrappedWidth(dayHeader_, dayFmt);
+            if (!dayBadge_.empty()) header += 8.0f + 72.0f;
+            const float fromHeader = header + DayPanelMetrics::kPadX * 2.0f;
+            const float fromRows = DayPanelMetrics::kPadX + DayPanelMetrics::kTimeW + longest + 4.0f +
+                                   DayPanelMetrics::kPadX;
+            float desired = std::max(fromHeader, fromRows);
+            desired = Clamp(desired, DayPanelMetrics::kMinW, DayPanelMetrics::kMaxW);
+
+            const RECT fitWork = GetAnchorWorkRect();
+            const float fitGap = 12.0f * scale;
+            constexpr float kMargin = 8.0f;
+            const float desiredScreen = desired * scale;
+            const float roomRight = static_cast<float>(fitWork.right) - kMargin -
+                                    (static_cast<float>(islandPill.right) + fitGap);
+            const float roomLeft = (static_cast<float>(islandPill.left) - fitGap) -
+                                   (static_cast<float>(fitWork.left) + kMargin);
+            const bool onRight = roomRight + 0.5f >= desiredScreen || roomRight >= roomLeft;
+            const float room = std::max(1.0f, onRight ? roomRight : roomLeft);
+            float screenW = std::min(desiredScreen, room);
+            const float minScreen = DayPanelMetrics::kMinW * scale;
+            const float maxScreen = DayPanelMetrics::kMaxW * scale;
+            if (room >= minScreen) {
+                screenW = Clamp(screenW, minScreen, std::min(maxScreen, room));
+            }
+            fittedContentW = screenW / scale;
+            dayOnRight_ = onRight;
+
+            const float column = std::max(12.0f, fittedContentW - DayPanelMetrics::kPadX -
+                                                      DayPanelMetrics::kTimeW - DayPanelMetrics::kPadX);
+            float titleLine = 16.0f;
+            float locLine = 16.0f;
+            {
+                DWRITE_TEXT_METRICS tm{};
+                if (auto probe = MakeLineLayout(L"Mg", titleFmt, 200.0f, &tm, false)) {
+                    titleLine = std::max(14.0f, tm.height);
+                }
+                tm = {};
+                if (auto probe = MakeLineLayout(L"Mg", metaFmt, 200.0f, &tm, false)) {
+                    locLine = std::max(12.0f, tm.height);
+                }
+            }
+            for (DayPanelItem& item : dayItems_) {
+                const float natural = MeasureUnwrappedWidth(item.title, titleFmt);
+                item.titleLines = natural > column + 1.0f ? 2 : 1;
+                if (item.titleLines == 1) {
+                    item.titleH = 16.0f;
+                    item.h = item.location.empty() ? DayPanelMetrics::kRow : DayPanelMetrics::kRowLoc;
+                } else {
+                    item.titleH = titleLine * 2.0f;
+                    item.h = item.location.empty() ? std::max(DayPanelMetrics::kRow, item.titleH + 8.0f)
+                                                   : std::max(DayPanelMetrics::kRowLoc, item.titleH + 4.0f + locLine);
+                }
+            }
+
+            float itemsH = DayPanelMetrics::kRow;
+            if (!dayEmpty_) {
+                itemsH = 0.0f;
+                for (size_t i = 0; i < dayItems_.size(); ++i) {
+                    if (i) itemsH += DayPanelMetrics::kGap;
+                    itemsH += dayItems_[i].h;
+                }
+            }
+            float contentH = DayPanelMetrics::kListTop + itemsH + DayPanelMetrics::kListBottom;
+            contentH = Clamp(contentH, DayPanelMetrics::kMinH, DayPanelMetrics::kMaxH);
+            const float viewport = std::max(1.0f, contentH - DayPanelMetrics::kListTop - DayPanelMetrics::kListBottom);
+            dayMaxScroll_ = std::max(0.0f, itemsH - viewport);
+            dayScroll_ += g_dayPanelWheel.exchange(0.0f, std::memory_order_relaxed);
+            if (dayScroll_ < 0.0f) dayScroll_ = 0.0f;
+            if (dayScroll_ > dayMaxScroll_) dayScroll_ = dayMaxScroll_;
+            contentTarget = contentH;
+        } else {
+            g_dayPanelWheel.store(0.0f, std::memory_order_relaxed);
+        }
+
+        if (dayMix_ < 1.0f) {
+            const float t = static_cast<float>((now - dayMixStart_) / 0.16);
+            dayMix_ = t >= 1.0f ? 1.0f : SmoothStep01(Clamp(t, 0.0f, 1.0f));
+            if (dayMix_ >= 1.0f) {
+                dayPrevItems_.clear();
+                dayPrevHeader_.clear();
+                dayPrevBadge_.clear();
+            }
+        }
+
+        float styleS = 1.0f;
+        float styleD = 1.0f;
+        if (settings.animationStyle == AnimationStyle::Smooth) {
+            styleD = 1.35f;
+        } else if (settings.animationStyle == AnimationStyle::Bouncy) {
+            styleS = 1.1f;
+            styleD = 0.70f;
+        } else if (settings.animationStyle == AnimationStyle::Snappy) {
+            styleS = 1.5f;
+            styleD = 1.25f;
+        }
+        const float speed = settings.animationSpeed;
+        auto stepTo = [&](SpringValue& s, float target) {
+            if (speed < 0.01f) {
+                s.Reset(target);
+                return;
+            }
+            const bool grow = target > s.value + 0.01f;
+            const bool shrink = target < s.value - 0.01f;
+            const float stiff = (grow ? 380.0f : shrink ? 200.0f : 280.0f) * styleS;
+            const float damp = (grow ? 26.0f : shrink ? 28.0f : 24.0f) * styleD;
+            s.target = target;
+            s.Step(dt * speed, stiff, damp);
+            if (s.value < 0.0f) {
+                s.value = 0.0f;
+                s.velocity = 0.0f;
+            }
+        };
+
+        const float targetW = (open ? fittedContentW : DayPanelMetrics::kClosedW) * scale;
+        const float targetH = contentTarget * scale;
+        stepTo(dayW_, targetW);
+        stepTo(dayH_, targetH);
+        stepTo(dayFade_, open ? 1.0f : 0.0f);
+
+        const bool moving =
+            std::fabs(dayW_.value - dayW_.target) > 0.5f ||
+            std::fabs(dayH_.value - dayH_.target) > 0.5f ||
+            std::fabs(dayW_.velocity) > 0.5f ||
+            std::fabs(dayH_.velocity) > 0.5f ||
+            std::fabs(dayFade_.value - dayFade_.target) > 0.02f ||
+            std::fabs(dayFade_.velocity) > 0.05f ||
+            dayMix_ < 0.999f;
+
+        if (!open && dayFade_.value <= 0.02f && std::fabs(dayFade_.velocity) < 0.05f) {
+            HideDayPanelSettled();
+            return false;
+        }
+
+        const RECT work = GetAnchorWorkRect();
+        const float gap = 12.0f * scale;
+        float screenLeft = dayOnRight_
+            ? static_cast<float>(islandPill.right) + gap
+            : static_cast<float>(islandPill.left) - gap - dayW_.value;
+        if (screenLeft < static_cast<float>(work.left) + 8.0f) {
+            screenLeft = static_cast<float>(work.left) + 8.0f;
+        }
+        if (screenLeft + dayW_.value > static_cast<float>(work.right) - 8.0f) {
+            screenLeft = static_cast<float>(work.right) - 8.0f - dayW_.value;
+        }
+        float screenTop = static_cast<float>(islandPill.top);
+        if (screenTop + dayH_.value > static_cast<float>(work.bottom) - 8.0f) {
+            screenTop = static_cast<float>(work.bottom) - 8.0f - dayH_.value;
+        }
+        if (screenTop < static_cast<float>(work.top)) screenTop = static_cast<float>(work.top);
+
+        const float closedH = DayPanelMetrics::kClosedH * scale;
+        const float denom = std::max(8.0f, dayH_.target - closedH);
+        const float reveal = SmoothStep01(Clamp((dayH_.value - closedH) / denom, 0.0f, 1.0f));
+        PresentDayPanel(settings, screenLeft, screenTop, reveal);
+        return moving;
     }
 
    private:
@@ -15213,6 +16786,10 @@ class Renderer {
         idleTextFormat_ = nullptr;
         calDayLargeFormat_ = nullptr;
         calGridFormat_ = nullptr;
+        agendaTitleFormat_ = nullptr;
+        agendaTimeFormat_ = nullptr;
+        agendaMetaFormat_ = nullptr;
+        agendaDayFormat_ = nullptr;
         timeDashboardFormat_ = nullptr;
         dateDashboardFormat_ = nullptr;
 
@@ -15269,6 +16846,18 @@ class Renderer {
         createFormat(mainFamily, defaultDisplay,
                      DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL,
                      DWRITE_FONT_STRETCH_NORMAL, 16.0f * ts, dateDashboardFormat_);
+        createFormat(mainFamily, defaultDisplay,
+                     DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL,
+                     DWRITE_FONT_STRETCH_NORMAL, di_ics::AgendaMetrics::kTitlePx * ts, agendaTitleFormat_);
+        createFormat(mainFamily, defaultDisplay,
+                     DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL,
+                     DWRITE_FONT_STRETCH_NORMAL, di_ics::AgendaMetrics::kTimePx * ts, agendaTimeFormat_);
+        createFormat(smallFamily, defaultSmall,
+                     DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL,
+                     DWRITE_FONT_STRETCH_NORMAL, di_ics::AgendaMetrics::kMetaPx * ts, agendaMetaFormat_);
+        createFormat(mainFamily, defaultDisplay,
+                     DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL,
+                     DWRITE_FONT_STRETCH_NORMAL, di_ics::AgendaMetrics::kDayPx * ts, agendaDayFormat_);
 
         usingFluentIcons_ = false;
         ComPtr<IDWriteFontCollection> sysFonts;
@@ -15364,6 +16953,16 @@ class Renderer {
             dateDashboardFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
             dateDashboardFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
         }
+        auto alignLeading = [](IDWriteTextFormat* fmt) {
+            if (!fmt) return;
+            fmt->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+            fmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            fmt->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        };
+        alignLeading(agendaTitleFormat_.Get());
+        alignLeading(agendaTimeFormat_.Get());
+        alignLeading(agendaMetaFormat_.Get());
+        alignLeading(agendaDayFormat_.Get());
         if (iconFormat_) {
             iconFormat_->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
         }
@@ -16191,123 +17790,267 @@ class Renderer {
 
 
 
-    // Compact date plus the next few events, used once a calendar feed has loaded.
-    // The month grid is drawn by the caller, to the right of this card.
-    void DrawCalendarAgenda(const GcalSnapshot& gcal, D2D1_RECT_F rect, const Settings& settings,
-                            float scale, const SYSTEMTIME& local, ID2D1SolidColorBrush* accent) {
-        const D2D1_RECT_F card = D2D1::RectF(rect.left + 14.0f * scale, rect.top + 14.0f * scale,
-                                             rect.left + 168.0f * scale, rect.bottom - 16.0f * scale);
-        DrawCard(card, 12.0f * scale);
+    // Full-panel agenda. Content pixels; DrawPill scales the island by sizeScale.
+    void DrawCalendarAgendaList(const GcalSnapshot& gcal, D2D1_RECT_F rect, const Settings& settings,
+                                const SYSTEMTIME& local, ID2D1SolidColorBrush* accent) {
+        (void)local;
+        using M = di_ics::AgendaMetrics;
+        const float width = rect.right - rect.left;
+        const float height = rect.bottom - rect.top;
 
-        const float pad = 8.0f * scale;
-        const D2D1_RECT_F header = D2D1::RectF(card.left + pad, card.top + 2.0f * scale,
-                                               card.right - pad, card.top + 54.0f * scale);
-        const D2D1_RECT_F dayRect = D2D1::RectF(header.right - 52.0f * scale, header.top,
-                                                header.right, header.bottom);
+        std::vector<di_ics::AgendaInput> inputs;
+        inputs.reserve(gcal.events.size());
+        for (const GcalEvent& ev : gcal.events) {
+            di_ics::AgendaInput in;
+            in.allDay = ev.allDay;
+            in.hasLocation = !ev.location.empty();
+            in.startUtc = ev.startUtc;
+            in.endUtc = ev.endUtc;
+            in.year = ev.year;
+            in.month = ev.month;
+            in.day = ev.day;
+            in.hour = ev.hour;
+            in.minute = ev.minute;
+            in.spanYear = ev.spanYear;
+            in.spanMonth = ev.spanMonth;
+            in.spanDay = ev.spanDay;
+            in.spanEndYear = ev.spanEndYear;
+            in.spanEndMonth = ev.spanEndMonth;
+            in.spanEndDay = ev.spanEndDay;
+            inputs.push_back(in);
+        }
+        const di_ics::AgendaLayout layout =
+            di_ics::BuildAgenda(inputs, di_ics::UnixNow(), settings.gcalAgendaDays);
 
-        if (boldTextFormat_ && accent) {
-            boldTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            boldTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        const float viewport = std::max(1.0f, height - M::kListTop - M::kListBottom);
+        const float maxScroll = std::max(0.0f, layout.contentHeight - viewport);
+        float scroll = g_gcalScroll.load(std::memory_order_relaxed);
+        if (scroll < 0.0f) scroll = 0.0f;
+        if (scroll > maxScroll) scroll = maxScroll;
+        g_gcalScroll.store(scroll, std::memory_order_relaxed);
+        g_gcalMaxScroll.store(maxScroll, std::memory_order_relaxed);
+        g_gcalAgendaOn.store(true, std::memory_order_relaxed);
+        g_gcalToggleL.store(0.0f, std::memory_order_relaxed);
+        g_gcalToggleT.store(0.0f, std::memory_order_relaxed);
+        g_gcalToggleR.store(std::max(0.0f, width - M::kDotReserve), std::memory_order_relaxed);
+        g_gcalToggleB.store(M::kListTop, std::memory_order_relaxed);
+        g_gcalToggleValid.store(true, std::memory_order_relaxed);
+
+        IDWriteTextFormat* titleFmt = agendaTitleFormat_ ? agendaTitleFormat_.Get() : textFormat_.Get();
+        IDWriteTextFormat* timeFmt = agendaTimeFormat_ ? agendaTimeFormat_.Get() : textFormat_.Get();
+        IDWriteTextFormat* metaFmt = agendaMetaFormat_ ? agendaMetaFormat_.Get() : smallTextFormat_.Get();
+        IDWriteTextFormat* dayFmt = agendaDayFormat_ ? agendaDayFormat_.Get() : boldTextFormat_.Get();
+
+        const float chipR = width - M::kDotReserve - 2.0f;
+        const float chipL = chipR - M::kToggleW;
+        const float chipT = M::kHeaderTop + (M::kHeaderH - M::kToggleH) * 0.5f;
+        const D2D1_RECT_F chip = D2D1::RectF(rect.left + chipL, rect.top + chipT,
+                                             rect.left + chipR, rect.top + chipT + M::kToggleH);
+        if (raisedBrush_) {
+            target_->FillRoundedRectangle(
+                D2D1::RoundedRect(chip, M::kToggleH * 0.5f, M::kToggleH * 0.5f), raisedBrush_.Get());
+        }
+        if (metaFmt && accent) {
+            metaFmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            const std::wstring chipLabel = Loc(L"Month");
+            target_->DrawTextW(chipLabel.c_str(), static_cast<UINT32>(chipLabel.size()), metaFmt,
+                               chip, accent, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            metaFmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        }
+        if (titleFmt) {
+            textBrush_->SetOpacity(0.96f);
             target_->DrawTextW(calendarCachedMonthName_.c_str(),
-                               static_cast<UINT32>(calendarCachedMonthName_.size()),
-                               boldTextFormat_.Get(),
-                               D2D1::RectF(header.left, header.top, dayRect.left - 4.0f * scale,
-                                           header.top + 22.0f * scale),
-                               accent, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-            boldTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            boldTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+                               static_cast<UINT32>(calendarCachedMonthName_.size()), titleFmt,
+                               D2D1::RectF(rect.left + M::kPadX, rect.top + M::kHeaderTop,
+                                           rect.left + chipL - 8.0f, rect.top + M::kHeaderTop + M::kHeaderH),
+                               textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
-        mutedBrush_->SetOpacity(0.70f);
-        if (smallTextFormat_) {
-            smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-            target_->DrawTextW(calendarCachedWeekdayName_.c_str(),
-                               static_cast<UINT32>(calendarCachedWeekdayName_.size()),
-                               smallTextFormat_.Get(),
-                               D2D1::RectF(header.left, header.top + 20.0f * scale, dayRect.left - 4.0f * scale,
-                                           header.bottom),
-                               mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-            smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
-        }
-
-        wchar_t dayStr[16] = {};
-        swprintf_s(dayStr, L"%d", local.wDay);
-        textBrush_->SetOpacity(0.97f);
-        target_->DrawTextW(dayStr, static_cast<UINT32>(wcslen(dayStr)),
-                           hugeTextFormat_ ? hugeTextFormat_.Get() : boldTextFormat_.Get(),
-                           dayRect, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
         ComPtr<ID2D1SolidColorBrush> hrBrush;
         if (SUCCEEDED(target_->CreateSolidColorBrush(
                 WithAlpha(material_.hairline, material_.hairline.a * settingsOpacity_), &hrBrush)) && hrBrush) {
-            const float y = header.bottom + 1.0f * scale;
-            target_->DrawLine(D2D1::Point2F(card.left + pad, y), D2D1::Point2F(card.right - pad, y),
-                              hrBrush.Get(), 1.0f * scale);
+            const float y = rect.top + M::kListTop - 6.0f;
+            target_->DrawLine(D2D1::Point2F(rect.left + M::kPadX, y),
+                              D2D1::Point2F(rect.right - M::kDotReserve, y), hrBrush.Get(), 1.0f);
         }
 
-        std::vector<const GcalEvent*> upcoming;
-        GcalUpcoming(gcal, 3, upcoming);
+        const D2D1_RECT_F list = D2D1::RectF(rect.left, rect.top + M::kListTop,
+                                             rect.right - M::kDotReserve * 0.5f,
+                                             rect.bottom - M::kListBottom);
+        target_->PushAxisAlignedClip(list, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        const float listTop = header.bottom + 6.0f * scale;
-        const float listBottom = card.bottom - 6.0f * scale;
-        const float rowH = (listBottom - listTop) / 3.0f;
-        if (upcoming.empty()) {
-            mutedBrush_->SetOpacity(0.55f);
-            if (smallTextFormat_) {
-                smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-                smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-                const wchar_t* quiet = L"Nothing coming up";
-                target_->DrawTextW(quiet, static_cast<UINT32>(wcslen(quiet)), smallTextFormat_.Get(),
-                                   D2D1::RectF(card.left + pad, listTop, card.right - pad, listBottom),
-                                   mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+        auto dayLabel = [](const di_ics::AgendaLine& line) -> std::wstring {
+            if (line.dayOffset == 0) return Loc(L"Today");
+            if (line.dayOffset == 1) return Loc(L"Tomorrow");
+            SYSTEMTIME st{};
+            st.wYear = static_cast<WORD>(line.year);
+            st.wMonth = static_cast<WORD>(line.month);
+            st.wDay = static_cast<WORD>(line.day);
+            wchar_t buf[64] = {};
+            if (GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &st, L"ddd, MMM d", buf,
+                                ARRAYSIZE(buf), nullptr) > 0) {
+                return std::wstring(buf);
             }
-        } else if (accent) {
-            for (size_t i = 0; i < upcoming.size(); ++i) {
-                const GcalEvent* ev = upcoming[i];
-                const float top = listTop + static_cast<float>(i) * rowH;
-                const D2D1_RECT_F row = D2D1::RectF(card.left + pad, top, card.right - pad, top + rowH);
-                std::wstring when;
-                if (ev->allDay) {
-                    when = L"All day";
+            return std::wstring(L"");
+        };
+
+        const float timeLeft = rect.left + M::kPadX;
+        const float titleLeft = timeLeft + M::kTimeColW + 8.0f;
+        const float titleRight = rect.right - M::kDotReserve - 4.0f;
+
+        for (const di_ics::AgendaLine& line : layout.lines) {
+            const float top = rect.top + M::kListTop + line.y - scroll;
+            if (top + line.h < list.top - 8.0f || top > list.bottom + 8.0f) continue;
+            if (line.dayHeader) {
+                const std::wstring label = dayLabel(line);
+                ID2D1Brush* brush = textBrush_.Get();
+                if (line.dayOffset == 0 && accent) {
+                    brush = accent;
+                } else if (line.dayOffset != 1) {
+                    mutedBrush_->SetOpacity(0.72f);
+                    brush = mutedBrush_.Get();
                 } else {
-                    SYSTEMTIME st{};
-                    st.wYear = static_cast<WORD>(ev->year);
-                    st.wMonth = static_cast<WORD>(ev->month);
-                    st.wDay = static_cast<WORD>(ev->day);
-                    st.wHour = static_cast<WORD>(ev->hour);
-                    st.wMinute = static_cast<WORD>(ev->minute);
-                    when = FormatIslandTime(st, settings.clockFollowSystem, settings.use24HourClock, false);
+                    textBrush_->SetOpacity(0.94f);
                 }
-                const float timeW = 58.0f * scale;
-                if (smallTextFormat_) {
-                    smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-                    smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-                    target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), smallTextFormat_.Get(),
-                                       D2D1::RectF(row.left, row.top, row.left + timeW, row.bottom),
-                                       accent, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                    smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                if (dayFmt) {
+                    target_->DrawTextW(label.c_str(), static_cast<UINT32>(label.size()), dayFmt,
+                                       D2D1::RectF(timeLeft, top, titleRight, top + line.h),
+                                       brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 }
-                std::wstring title = ev->summary;
-                if (!ev->location.empty()) {
-                    title += L"  ·  ";
-                    title += ev->location;
+                continue;
+            }
+
+            if (line.role == di_ics::AgendaRole::Empty) {
+                mutedBrush_->SetOpacity(0.48f);
+                const std::wstring quiet = Loc(L"Nothing scheduled");
+                if (metaFmt) {
+                    target_->DrawTextW(quiet.c_str(), static_cast<UINT32>(quiet.size()), metaFmt,
+                                       D2D1::RectF(timeLeft, top, titleRight, top + line.h),
+                                       mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 }
-                textBrush_->SetOpacity(0.92f);
-                if (textFormat_) {
-                    textFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-                    target_->DrawTextW(title.c_str(), static_cast<UINT32>(title.size()), textFormat_.Get(),
-                                       D2D1::RectF(row.left + timeW, row.top, row.right, row.bottom),
-                                       textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                    textFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                continue;
+            }
+
+            if (line.eventIndex < 0 || line.eventIndex >= static_cast<int>(gcal.events.size())) continue;
+            const GcalEvent& ev = gcal.events[static_cast<size_t>(line.eventIndex)];
+            const float fade = line.past ? 0.38f : 1.0f;
+            const float titleBand = ev.location.empty() ? line.h : 16.0f;
+            const float timeBottom = top + titleBand;
+            const float timeInset = 8.0f;
+
+            if (line.happening) {
+                D2D1_COLOR_F wash = GcalRgb(ev.colorRgb, 0.22f * fade * settingsOpacity_);
+                ComPtr<ID2D1SolidColorBrush> washBrush;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(wash, &washBrush)) && washBrush) {
+                    target_->FillRoundedRectangle(
+                        D2D1::RoundedRect(D2D1::RectF(rect.left + 8.0f, top + 1.0f, titleRight, top + line.h - 1.0f),
+                                          6.0f, 6.0f),
+                        washBrush.Get());
                 }
             }
+
+            {
+                D2D1_COLOR_F bar = GcalRgb(ev.colorRgb, fade * settingsOpacity_);
+                ComPtr<ID2D1SolidColorBrush> barBrush;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(bar, &barBrush)) && barBrush) {
+                    const float barH = 12.0f;
+                    const float barTop = top + (titleBand - barH) * 0.5f;
+                    target_->FillRoundedRectangle(
+                        D2D1::RoundedRect(D2D1::RectF(timeLeft, barTop, timeLeft + 3.0f, barTop + barH), 1.5f, 1.5f),
+                        barBrush.Get());
+                }
+            }
+
+            std::wstring when;
+            if (line.role == di_ics::AgendaRole::AllDay) {
+                when = Loc(L"All day");
+            } else {
+                SYSTEMTIME st{};
+                st.wYear = static_cast<WORD>(ev.year);
+                st.wMonth = static_cast<WORD>(ev.month);
+                st.wDay = static_cast<WORD>(ev.day);
+                st.wHour = static_cast<WORD>(ev.hour);
+                st.wMinute = static_cast<WORD>(ev.minute);
+                when = FormatIslandTime(st, settings.clockFollowSystem, settings.use24HourClock, false);
+                if (line.role == di_ics::AgendaRole::Deadline) {
+                    when = std::wstring(Loc(L"Due")) + L" " + when;
+                }
+            }
+
+            const bool coloredTime = line.role == di_ics::AgendaRole::Deadline || line.happening;
+            const D2D1_RECT_F timeRect = D2D1::RectF(timeLeft + timeInset, top, timeLeft + M::kTimeColW, timeBottom);
+            bool drewTime = false;
+            if (coloredTime && timeFmt) {
+                D2D1_COLOR_F c = GcalRgb(ev.colorRgb, fade * settingsOpacity_);
+                ComPtr<ID2D1SolidColorBrush> timeColor;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(c, &timeColor)) && timeColor) {
+                    target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), timeFmt, timeRect,
+                                       timeColor.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    drewTime = true;
+                }
+            }
+            if (!drewTime && timeFmt) {
+                mutedBrush_->SetOpacity(0.78f * fade);
+                target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), timeFmt, timeRect,
+                                   mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
+
+            textBrush_->SetOpacity(0.96f * fade);
+            if (titleFmt) {
+                target_->DrawTextW(ev.summary.c_str(), static_cast<UINT32>(ev.summary.size()), titleFmt,
+                                   D2D1::RectF(titleLeft, top, titleRight, top + titleBand),
+                                   textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
+            if (!ev.location.empty() && metaFmt) {
+                mutedBrush_->SetOpacity(0.62f * fade);
+                target_->DrawTextW(ev.location.c_str(), static_cast<UINT32>(ev.location.size()), metaFmt,
+                                   D2D1::RectF(titleLeft, top + 16.0f, titleRight, top + line.h),
+                                   mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
         }
+
+        target_->PopAxisAlignedClip();
+
+        auto fadeEdge = [&](bool topEdge) {
+            const float fade = M::kFade;
+            const D2D1_RECT_F band = topEdge
+                ? D2D1::RectF(list.left, list.top, list.right, list.top + fade)
+                : D2D1::RectF(list.left, list.bottom - fade, list.right, list.bottom);
+            D2D1_COLOR_F solid = material_.base;
+            solid.a = Clamp(solid.a * settingsOpacity_, 0.0f, 1.0f);
+            D2D1_COLOR_F clear = solid;
+            clear.a = 0.0f;
+            D2D1_GRADIENT_STOP stops[2];
+            if (topEdge) {
+                stops[0] = {0.0f, solid};
+                stops[1] = {1.0f, clear};
+            } else {
+                stops[0] = {0.0f, clear};
+                stops[1] = {1.0f, solid};
+            }
+            ComPtr<ID2D1GradientStopCollection> stopsColl;
+            if (FAILED(target_->CreateGradientStopCollection(stops, 2, D2D1_GAMMA_2_2,
+                                                             D2D1_EXTEND_MODE_CLAMP, &stopsColl)) ||
+                !stopsColl) {
+                return;
+            }
+            ComPtr<ID2D1LinearGradientBrush> fadeBrush;
+            if (FAILED(target_->CreateLinearGradientBrush(
+                    D2D1::LinearGradientBrushProperties(D2D1::Point2F(band.left, band.top),
+                                                        D2D1::Point2F(band.left, band.bottom)),
+                    stopsColl.Get(), &fadeBrush)) ||
+                !fadeBrush) {
+                return;
+            }
+            target_->FillRectangle(band, fadeBrush.Get());
+        };
+        if (scroll > 0.5f) fadeEdge(true);
+        if (maxScroll - scroll > 0.5f) fadeEdge(false);
 
         textBrush_->SetOpacity(0.96f);
         mutedBrush_->SetOpacity(0.75f);
     }
+
 
     void DrawCalendarDashboard(const SharedState& state, D2D1_RECT_F rect, const Settings& settings, double now, float scale, SYSTEMTIME& local) {
         (void)now;
@@ -16367,20 +18110,21 @@ class Renderer {
             calendarCachedDate_ = local;
         }
 
-        // With a loaded calendar the left column becomes a compact date plus the
-        // next few events, and the month grid shifts right to make room. Until a
-        // feed has loaded, the hero below is the original layout.
+        // A loaded feed opens the agenda. The month grid stays available from
+        // the date card, and a calendar with no feed keeps this hero exactly.
         const GcalSnapshot* gcalSnap = state.gcal.get();
-        const bool agenda = gcalSnap && gcalSnap->loaded;
+        const bool hasFeed = gcalSnap && gcalSnap->loaded && !settings.gcalIcsUrls.empty();
+        if (hasFeed && !g_gcalShowMonth.load(std::memory_order_relaxed)) {
+            g_gcalGridValid.store(false, std::memory_order_relaxed);
+            DrawCalendarAgendaList(*gcalSnap, rect, settings, local, accent.Get());
+            return;
+        }
+        g_gcalAgendaOn.store(false, std::memory_order_relaxed);
+        g_gcalGridValid.store(false, std::memory_order_relaxed);
+
         float gridStart = rect.left + 134.0f * scale;
         float colW = 28.0f * scale;
 
-        if (agenda) {
-            DrawCalendarAgenda(*gcalSnap, rect, settings, scale, local, accent.Get());
-            gridStart = rect.left + 176.0f * scale;
-            const float gridRight = rect.right - 12.0f * scale;
-            colW = std::max(18.0f * scale, (gridRight - gridStart) / 7.0f);
-        } else {
         // ── Hero column ──────────────────────────────────────────────────────
         // Today's date as an editorial block: month over a large day figure over
         // the weekday. Uses the shared DrawCard so it matches every other panel
@@ -16419,21 +18163,41 @@ class Renderer {
         wchar_t dayStr[16] = {};
         swprintf_s(dayStr, L"%d", local.wDay);
         textBrush_->SetOpacity(0.97f);
+        const float dayBottom = hasFeed ? hero.bottom - 42.0f * scale : hero.bottom - 26.0f * scale;
         target_->DrawTextW(dayStr, static_cast<UINT32>(wcslen(dayStr)),
                            calDayLargeFormat_ ? calDayLargeFormat_.Get() : hugeTextFormat_.Get(),
-                           D2D1::RectF(hero.left, hero.top + 34.0f * scale,
-                                       hero.right, hero.bottom - 26.0f * scale),
+                           D2D1::RectF(hero.left, hero.top + 34.0f * scale, hero.right, dayBottom),
                            textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 
         mutedBrush_->SetOpacity(0.70f);
         if (boldTextFormat_) {
+            const float weekdayTop = hasFeed ? hero.bottom - 40.0f * scale : hero.bottom - 24.0f * scale;
+            const float weekdayBottom = hasFeed ? hero.bottom - 22.0f * scale : hero.bottom - 6.0f * scale;
             target_->DrawTextW(calendarCachedWeekdayName_.c_str(),
                                static_cast<UINT32>(calendarCachedWeekdayName_.size()),
                                boldTextFormat_.Get(),
-                               D2D1::RectF(hero.left + 4.0f * scale, hero.bottom - 24.0f * scale,
-                                           hero.right - 4.0f * scale, hero.bottom - 6.0f * scale),
+                               D2D1::RectF(hero.left + 4.0f * scale, weekdayTop,
+                                           hero.right - 4.0f * scale, weekdayBottom),
                                mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
+        if (hasFeed && accent && smallTextFormat_) {
+            smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            const std::wstring back = Loc(L"Agenda");
+            target_->DrawTextW(back.c_str(), static_cast<UINT32>(back.size()), smallTextFormat_.Get(),
+                               D2D1::RectF(hero.left, hero.bottom - 20.0f * scale,
+                                           hero.right, hero.bottom - 4.0f * scale),
+                               accent.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+            const float inv = 1.0f / std::max(scale, 0.01f);
+            g_gcalToggleL.store((hero.left - rect.left) * inv, std::memory_order_relaxed);
+            g_gcalToggleT.store((hero.top - rect.top) * inv, std::memory_order_relaxed);
+            g_gcalToggleR.store((hero.right - rect.left) * inv, std::memory_order_relaxed);
+            g_gcalToggleB.store((hero.bottom - rect.top) * inv, std::memory_order_relaxed);
+            g_gcalToggleValid.store(true, std::memory_order_relaxed);
+        } else {
+            g_gcalToggleValid.store(false, std::memory_order_relaxed);
         }
 
         // ── Month grid ───────────────────────────────────────────────────────
@@ -16482,6 +18246,42 @@ class Renderer {
         // the digits once the rows got shorter.
         const float markerR = std::min(colW, rowH) * 0.5f - 1.5f * scale;
 
+        if (hasFeed) {
+            g_gcalGridL.store(gridStart - rect.left, std::memory_order_relaxed);
+            g_gcalGridT.store(datesTop - rect.top, std::memory_order_relaxed);
+            g_gcalColW.store(colW, std::memory_order_relaxed);
+            g_gcalRowH.store(rowH, std::memory_order_relaxed);
+            g_gcalGridStart.store(startDayIdx, std::memory_order_relaxed);
+            g_gcalGridDays.store(monthDays, std::memory_order_relaxed);
+            g_gcalGridYear.store(local.wYear, std::memory_order_relaxed);
+            g_gcalGridMonth.store(local.wMonth, std::memory_order_relaxed);
+            g_gcalGridValid.store(true, std::memory_order_relaxed);
+        }
+
+        const int hoverDay = g_gcalHoverDay.load(std::memory_order_relaxed);
+        const bool hoverThisMonth = hasFeed && hoverDay >= 1 &&
+            g_gcalHoverYear.load(std::memory_order_relaxed) == local.wYear &&
+            g_gcalHoverMonth.load(std::memory_order_relaxed) == static_cast<int>(local.wMonth);
+
+        auto colorsOnDay = [&](int day, uint32_t* out, int cap) {
+            int count = 0;
+            if (!gcalSnap || cap < 1) return 0;
+            const int cur = local.wYear * 10000 + local.wMonth * 100 + day;
+            for (const GcalEvent& ev : gcalSnap->events) {
+                const int start = ev.spanYear * 10000 + ev.spanMonth * 100 + ev.spanDay;
+                const int end = ev.spanEndYear * 10000 + ev.spanEndMonth * 100 + ev.spanEndDay;
+                if (cur < start || cur >= end) continue;
+                bool seen = false;
+                for (int i = 0; i < count; ++i) {
+                    if (out[i] == ev.colorRgb) seen = true;
+                }
+                if (seen) continue;
+                out[count++] = ev.colorRgb;
+                if (count >= cap) break;
+            }
+            return count;
+        };
+
         int row = 0;
         int col = startDayIdx;
         for (int d = 1; d <= monthDays; ++d) {
@@ -16489,7 +18289,19 @@ class Renderer {
                                                  gridStart + (col + 1) * colW, datesTop + (row + 1) * rowH);
             const std::wstring dayText = std::to_wstring(d);
             const int weekday = (firstDay + col) % 7;
-            const bool hasEvent = agenda && GcalCoversDay(gcalSnap, local.wYear, local.wMonth, d);
+            uint32_t dayColors[3] = {};
+            const int dayColorCount = hasFeed ? colorsOnDay(d, dayColors, 3) : 0;
+            const bool hasEvent = dayColorCount > 0;
+            if (hoverThisMonth && d == hoverDay && d != local.wDay) {
+                ComPtr<ID2D1SolidColorBrush> hoverBrush;
+                D2D1_COLOR_F hover = material_.textPrimary;
+                hover.a = 0.08f * settingsOpacity_;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(hover, &hoverBrush)) && hoverBrush) {
+                    const D2D1_RECT_F hot = D2D1::RectF(cell.left + 1.0f, cell.top + 1.0f,
+                                                       cell.right - 1.0f, cell.bottom - 1.0f);
+                    target_->FillRoundedRectangle(D2D1::RoundedRect(hot, 5.0f, 5.0f), hoverBrush.Get());
+                }
+            }
             // Nudge the figure up so the event dot under it doesn't sit on the digit.
             D2D1_RECT_F textCell = cell;
             if (hasEvent && d != local.wDay) {
@@ -16519,22 +18331,32 @@ class Renderer {
                                    textCell, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
             }
 
-            if (hasEvent && accent) {
+            if (hasEvent) {
                 const float dotR = std::max(1.15f * scale, std::min(1.7f * scale, rowH * 0.09f));
                 const float cx = cell.left + colW * 0.5f;
                 const float cy = cell.top + rowH * 0.5f;
-                if (d == local.wDay) {
-                    // The accent disc fills the cell. The dot sits in the empty
-                    // lower-right of that disc, in the primary text colour.
-                    textBrush_->SetOpacity(1.0f);
-                    target_->FillEllipse(
-                        D2D1::Ellipse(D2D1::Point2F(cx + markerR * 0.42f, cy + markerR * 0.42f),
-                                      dotR, dotR),
-                        textBrush_.Get());
-                } else {
-                    target_->FillEllipse(
-                        D2D1::Ellipse(D2D1::Point2F(cx, cell.bottom - dotR - 0.5f * scale), dotR, dotR),
-                        accent.Get());
+                const float gap = dotR * 2.6f;
+                const float span = (dayColorCount - 1) * gap;
+                const float y = (d == local.wDay) ? cy + markerR * 0.52f : cell.bottom - dotR - 0.6f * scale;
+                const float x0 = ((d == local.wDay) ? cx + markerR * 0.08f : cx) - span * 0.5f;
+                for (int i = 0; i < dayColorCount; ++i) {
+                    ComPtr<ID2D1SolidColorBrush> dotBrush;
+                    if (FAILED(target_->CreateSolidColorBrush(GcalRgb(dayColors[i], settingsOpacity_), &dotBrush)) ||
+                        !dotBrush) {
+                        continue;
+                    }
+                    const D2D1_ELLIPSE dot = D2D1::Ellipse(D2D1::Point2F(x0 + i * gap, y), dotR, dotR);
+                    if (d == local.wDay) {
+                        // The day disc is the accent fill. Ring the event color so
+                        // a blue event still reads on a blue today.
+                        textBrush_->SetOpacity(1.0f);
+                        target_->FillEllipse(dot, textBrush_.Get());
+                        target_->FillEllipse(
+                            D2D1::Ellipse(dot.point, std::max(0.6f, dotR - 0.7f), std::max(0.6f, dotR - 0.7f)),
+                            dotBrush.Get());
+                    } else {
+                        target_->FillEllipse(dot, dotBrush.Get());
+                    }
                 }
             }
 
@@ -23305,6 +25127,58 @@ class Renderer {
         return layout;
     }
 
+    // Natural single-line width, in the text format's own pixels (content px
+    // for the agenda formats, which the panel's sizeScale transform enlarges).
+    float MeasureUnwrappedWidth(const std::wstring& text, IDWriteTextFormat* fmt) {
+        if (!fmt || text.empty() || !dwriteFactory_) return 0.0f;
+        ComPtr<IDWriteTextLayout> layout;
+        if (FAILED(dwriteFactory_->CreateTextLayout(text.c_str(), static_cast<UINT32>(text.size()),
+                                                    fmt, 8192.0f, 200.0f, &layout)) || !layout) {
+            return 0.0f;
+        }
+        layout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+        DWRITE_TEXT_METRICS metrics{};
+        layout->GetMetrics(&metrics);
+        return std::ceil(metrics.widthIncludingTrailingWhitespace);
+    }
+
+    // Word-wrap to at most `maxLines`. Anything past that is ellipsized on the
+    // last line instead of being clipped mid-glyph.
+    ComPtr<IDWriteTextLayout> MakeWrapLayout(const std::wstring& text, IDWriteTextFormat* fmt,
+                                             float maxWidth, int maxLines) {
+        ComPtr<IDWriteTextLayout> layout;
+        if (!fmt || !dwriteFactory_ || text.empty() || maxLines < 1) return layout;
+        if (FAILED(dwriteFactory_->CreateTextLayout(text.c_str(), static_cast<UINT32>(text.size()),
+                                                    fmt, std::max(1.0f, maxWidth), 400.0f, &layout)) ||
+            !layout) {
+            layout.Reset();
+            return layout;
+        }
+        layout->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
+        layout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        layout->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+        DWRITE_TEXT_METRICS metrics{};
+        layout->GetMetrics(&metrics);
+        if (metrics.lineCount <= static_cast<UINT32>(maxLines)) return layout;
+
+        std::vector<DWRITE_LINE_METRICS> lines(std::max<UINT32>(metrics.lineCount, 1));
+        UINT32 written = 0;
+        if (FAILED(layout->GetLineMetrics(lines.data(), static_cast<UINT32>(lines.size()), &written)) ||
+            written == 0) {
+            return layout;
+        }
+        const UINT32 keep = std::min<UINT32>(written, static_cast<UINT32>(maxLines));
+        float height = 0.0f;
+        for (UINT32 i = 0; i < keep; ++i) height += lines[i].height;
+        layout->SetMaxHeight(std::max(1.0f, height));
+        ComPtr<IDWriteInlineObject> sign;
+        if (SUCCEEDED(dwriteFactory_->CreateEllipsisTrimmingSign(layout.Get(), &sign)) && sign) {
+            DWRITE_TRIMMING trimming = {DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
+            layout->SetTrimming(&trimming, sign.Get());
+        }
+        return layout;
+    }
+
     ID2D1StrokeStyle* RoundStroke() {
         if (!roundStroke_ && d2dFactory_) {
             d2dFactory_->CreateStrokeStyle(
@@ -23917,6 +25791,41 @@ class Renderer {
     int bitmapCapW_ = 0;      // allocated size of the DIB (>= logical size)
     int bitmapCapH_ = 0;
 
+    // Day-detail side panel. Own layered window, own DC target, so it can sit
+    // outside the island stage. Brushes are rebuilt per present; text formats
+    // are DWrite and stay on the shared factory.
+    HDC panelDc_ = nullptr;
+    HBITMAP panelDib_ = nullptr;
+    HBITMAP panelOld_ = nullptr;
+    int panelBmpW_ = 0;
+    int panelBmpH_ = 0;
+    int panelCapW_ = 0;
+    int panelCapH_ = 0;
+    ComPtr<ID2D1DCRenderTarget> panelTarget_;
+    SpringValue dayW_;
+    SpringValue dayH_;
+    SpringValue dayFade_;
+    bool dayEngaged_ = false;
+    int dayOpen_ = -1;
+    int dayYear_ = 0;
+    int dayMonth_ = 0;
+    int dayKey_ = 0;
+    float dayScroll_ = 0.0f;
+    float dayMaxScroll_ = 0.0f;
+    float dayMix_ = 1.0f;
+    double dayMixStart_ = 0.0;
+    double dayHotSince_ = -1.0;
+    double dayLeaveSince_ = -1.0;
+    bool dayOnRight_ = true;
+    bool dayEmpty_ = true;
+    bool dayPrevEmpty_ = true;
+    std::wstring dayHeader_;
+    std::wstring dayBadge_;
+    std::wstring dayPrevHeader_;
+    std::wstring dayPrevBadge_;
+    std::vector<DayPanelItem> dayItems_;
+    std::vector<DayPanelItem> dayPrevItems_;
+
     // Fixed-stage bookkeeping (see Render)
     POINT lastOrigin_ = {0, 0};
     RECT lastBounds_ = {0, 0, 0, 0};
@@ -23944,6 +25853,10 @@ class Renderer {
     ComPtr<IDWriteTextFormat> idleTextFormat_;
     ComPtr<IDWriteTextFormat> calDayLargeFormat_;
     ComPtr<IDWriteTextFormat> calGridFormat_;
+    ComPtr<IDWriteTextFormat> agendaTitleFormat_;
+    ComPtr<IDWriteTextFormat> agendaTimeFormat_;
+    ComPtr<IDWriteTextFormat> agendaMetaFormat_;
+    ComPtr<IDWriteTextFormat> agendaDayFormat_;
     ComPtr<IDWriteTextFormat> timeDashboardFormat_;
     ComPtr<IDWriteTextFormat> dateDashboardFormat_;
     ComPtr<ID2D1SolidColorBrush> accentBrush_;
@@ -25523,6 +27436,11 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         }
 
         case WM_DESTROY:
+            if (g_dayPanelHwnd && IsWindow(g_dayPanelHwnd)) {
+                ShowWindow(g_dayPanelHwnd, SW_HIDE);
+            }
+            DwmBackdrop::HidePanel();
+            g_dayPanelHitLive = false;
             RevokeDragDrop(hwnd);
             if (g_oleInitialized) {
                 OleUninitialize();
@@ -25705,6 +27623,12 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                         SetCursor(LoadCursorW(nullptr, IDC_HAND));
                         return TRUE;
                     }
+                }
+
+                if (currentTab == CalendarTabIndex(g_settings, mediaActive) &&
+                    GcalToggleHitTest(MediaContentFromClient(pt.x, pt.y))) {
+                    SetCursor(LoadCursorW(nullptr, IDC_HAND));
+                    return TRUE;
                 }
 
                 // A File Tray row under the cursor is clickable (opens the file).
@@ -25895,6 +27819,21 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 g_layoutDirty = true;
             }
 
+            int hoverDay = -1;
+            if (currentTab == CalendarTabIndex(g_settings, mediaActive) &&
+                !g_gcalAgendaOn.load(std::memory_order_relaxed)) {
+                hoverDay = GcalDayAtPoint(MediaContentFromClient(xPos, yPos));
+                if (hoverDay > 0) {
+                    g_gcalHoverYear.store(g_gcalGridYear.load(std::memory_order_relaxed),
+                                          std::memory_order_relaxed);
+                    g_gcalHoverMonth.store(g_gcalGridMonth.load(std::memory_order_relaxed),
+                                           std::memory_order_relaxed);
+                }
+            }
+            if (g_gcalHoverDay.exchange(hoverDay) != hoverDay) {
+                g_layoutDirty = true;
+            }
+
             // Pressed on a row and moved past the system drag threshold: pick the file up.
             if (s_trayPressActive) {
                 if (!(wParam & MK_LBUTTON)) {
@@ -25925,6 +27864,9 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 g_layoutDirty = true;
             }
             if (g_hoveredFileTrayAction.exchange(-1) != -1) {
+                g_layoutDirty = true;
+            }
+            if (g_gcalHoverDay.exchange(-1) != -1) {
                 g_layoutDirty = true;
             }
             return 0;
@@ -26051,6 +27993,18 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                 const int currentTab = NormalizedTabIndex(g_settings);
 
                 const MediaContentPoint cp = MediaContentFromClient(xPos, yPos);
+
+                if (currentTab == CalendarTabIndex(g_settings, mediaActive) && GcalToggleHitTest(cp)) {
+                    bool hasFeed = false;
+                    {
+                        std::lock_guard lock(g_stateMutex);
+                        hasFeed = g_state.gcal && g_state.gcal->loaded && !g_settings.gcalIcsUrls.empty();
+                    }
+                    if (hasFeed) {
+                        GcalToggleView();
+                        return 0;
+                    }
+                }
 
                 // File Tray: the bin clears the shelf, the cut button removes one file,
                 // and a plain click on a row opens it with its default app. (Dragging a
@@ -26216,6 +28170,48 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             const ULONGLONG wheelNow = GetTickCount64();
             const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
             if (delta == 0) return 0;
+
+            // Calendar agenda: the wheel scrolls the list. At the top or bottom a
+            // fresh gesture falls through and switches tabs. The header and the
+            // pagination dots always switch tabs.
+            if (g_gcalAgendaOn.load(std::memory_order_relaxed)) {
+                bool mediaActive = false;
+                {
+                    std::lock_guard lock(g_stateMutex);
+                    mediaActive = g_settings.media && g_state.media.available;
+                }
+                if (NormalizedTabIndex(g_settings) == CalendarTabIndex(g_settings, mediaActive)) {
+                    POINT wheelPt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                    ScreenToClient(hwnd, &wheelPt);
+                    const MediaContentPoint wheelCp = MediaContentFromClient(wheelPt.x, wheelPt.y);
+                    if (GcalListHitTest(wheelCp)) {
+                        static float s_gcalWheelAccum = 0.0f;
+                        static ULONGLONG s_gcalGestureTick = 0;
+                        const float dir = delta > 0 ? -1.0f : 1.0f;
+                        const float current = g_gcalScroll.load(std::memory_order_relaxed);
+                        const float maxScroll = g_gcalMaxScroll.load(std::memory_order_relaxed);
+                        const bool canScroll = dir < 0.0f ? current > 0.5f : current < maxScroll - 0.5f;
+                        if (canScroll) {
+                            s_gcalGestureTick = wheelNow;
+                            if (s_gcalWheelAccum != 0.0f && ((delta > 0) != (s_gcalWheelAccum > 0.0f))) {
+                                s_gcalWheelAccum = 0.0f;
+                            }
+                            s_gcalWheelAccum += static_cast<float>(delta);
+                            const float px = s_gcalWheelAccum / static_cast<float>(WHEEL_DELTA) * 64.0f;
+                            if (std::fabs(px) >= 1.0f) {
+                                GcalScrollBy(dir * std::fabs(px));
+                                s_gcalWheelAccum = 0.0f;
+                            }
+                            return 0;
+                        }
+                        if (wheelNow - s_gcalGestureTick < 300) {
+                            s_gcalGestureTick = wheelNow;
+                            return 0;
+                        }
+                        s_gcalWheelAccum = 0.0f;
+                    }
+                }
+            }
 
             // File Tray: with the cursor over the list, the wheel scrolls it row by row.
             // At the top / bottom edge the list swallows leftover inertia of the same
@@ -26535,6 +28531,7 @@ DWORD WINAPI RenderThreadProc(void*) {
                 // Just hid: drop to zero-CPU parking immediately, no
                 // lingering render/animation work this frame.
                 ShowWindow(hwnd, SW_HIDE);
+                renderer.ParkDayPanel();
                 DwmBackdrop::HideAll();
                 g_audioCaptureNeeded.store(false, std::memory_order_relaxed);
                 wasManuallyHidden = true;
@@ -26756,6 +28753,18 @@ DWORD WINAPI RenderThreadProc(void*) {
                 hoverRect.bottom += padY;
             }
             hover = PtInRect(&hoverRect, cursor) != FALSE;
+            // The day panel sits outside the pill. The pointer has to cross the
+            // gap to reach it; treat the panel and that gap as hover so
+            // expand-on-hover does not collapse on the way across.
+            if (!hover && g_dayPanelHitLive) {
+                if (PtInRect(&g_dayPanelHit, cursor)) {
+                    hover = true;
+                } else if (cursor.y >= pillRect.top && cursor.y < pillRect.bottom &&
+                           cursor.x >= std::min(pillRect.right, g_dayPanelHit.left) &&
+                           cursor.x < std::max(pillRect.left, g_dayPanelHit.right)) {
+                    hover = true;
+                }
+            }
         } else if (g_settings.unhideOnHover) {
             RECT dockRect = GetIslandDockRect();
             hover = PtInRect(&dockRect, cursor) != FALSE;
@@ -26953,6 +28962,24 @@ DWORD WINAPI RenderThreadProc(void*) {
                 } else if (g_settings.mediaPillClock) {
                     primary.width = (MediaPillLayout::kBaseWidth + clockSection) * g_settings.sizeScale;
                 }
+            }
+        }
+
+        // Agenda needs more room than the 380x184 dashboards. Only the calendar
+        // tab grows, and only while a feed is showing the agenda. sizeScale
+        // already includes the DPI factor.
+        if (snapshot.gcal && snapshot.gcal->loaded && !g_settings.gcalIcsUrls.empty() &&
+            !g_gcalShowMonth.load(std::memory_order_relaxed) &&
+            !(primary.kind == IslandKind::Idle &&
+              (g_settings.gameOverlay || g_gameOverlayPinned.load()))) {
+            const bool mediaSurface = primary.kind == IslandKind::Media;
+            const bool expanded = mediaSurface
+                ? (!isFullscreen && (isHoverExpanded || pinned || recentTrackChange))
+                : (primary.kind == IslandKind::Idle && !isFullscreen && (pinned || isHoverExpanded));
+            if (expanded &&
+                NormalizedTabIndex(g_settings) == CalendarTabIndex(g_settings, mediaSurface)) {
+                primary.width = di_ics::AgendaMetrics::kPanelW * g_settings.sizeScale;
+                primary.height = di_ics::AgendaMetrics::kPanelH * g_settings.sizeScale;
             }
         }
 
@@ -27365,11 +29392,17 @@ DWORD WINAPI RenderThreadProc(void*) {
             wasAutoHiddenParked = true;
             g_autoHiddenParked = true;
             ShowWindow(hwnd, SW_HIDE);
+            renderer.ParkDayPanel();
             DwmBackdrop::HideAll();
             g_audioCaptureNeeded.store(false, std::memory_order_relaxed);
             setHighResTimer(false);
             continue;
         }
+
+        const bool monthLive = g_gcalGridValid.load(std::memory_order_relaxed) &&
+            heightSpring.value > MediaLayout::kExpandedMinHeight * std::max(g_settings.sizeScale, 0.01f);
+        const bool dayPanelAnimating = renderer.TickDayPanel(snapshot, pillRect, dt, now, monthLive);
+        if (dayPanelAnimating) needsRender = true;
 
         int targetFps = g_settings.targetFps;
         if (targetFps <= 0) {
@@ -27400,7 +29433,8 @@ DWORD WINAPI RenderThreadProc(void*) {
             std::fabs(nudgeSpring.velocity) > 0.5f ||
             std::fabs(volumeBarSpring.value - volumeBarSpring.target) > 0.5f ||
             std::fabs(volumeBarSpring.velocity) > 0.5f ||
-            g_tabAnimating.load(std::memory_order_relaxed);
+            g_tabAnimating.load(std::memory_order_relaxed) ||
+            dayPanelAnimating;
 
         if (continuousAnimation && !springsAnimating) {
             constexpr double kContinuousFrameMs = 1000.0 / 60.0;
