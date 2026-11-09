@@ -2,7 +2,7 @@
 // @id              dynamic-island-for-windows-gcal
 // @name            Dynamic Island for Windows (Google Calendar)
 // @description     A living, breathing pill overlay inspired by iPhone's Dynamic Island, with Google Calendar events from a private iCal link. Reacts to media, downloads, clipboard, battery, and more.
-// @version         1.4.0-gcal.3
+// @version         1.4.0-gcal.4
 // @author          Himanshu
 // @github          https://github.com/SentientPlatypus
 // @include         windhawk.exe
@@ -99,7 +99,7 @@ The calendar tab can show events from your Google Calendar without signing in. T
 3. Choose **Settings and sharing**.
 4. Scroll to **Integrate calendar** and copy **Secret address in iCal format**. It looks like `https://calendar.google.com/calendar/ical/.../basic.ics`.
 5. In Windhawk, open this mod's settings and paste that address into **Google Calendar → iCal URLs**. More than one calendar is fine: separate the addresses with commas or put each one on its own line.
-6. The calendar tab opens as an agenda: days grouped under **Today**, **Tomorrow**, and a date, with the time on the left and the title on the right. Each calendar keeps its Google color (a bar on the row, and the dot on the month grid). Deadlines (zero-length, or around 11:59 PM) read as **Due 11:59 PM** in that color. Scroll the list when it is longer than the panel. Click the month header, or the **Month** chip, to get the month grid back; hover a day to see everything on it. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
+6. The calendar tab opens as an agenda: days grouped under **Today**, **Tomorrow**, and a date, with the time on the left and the title on the right. Each calendar keeps its Google color (a bar on the row, and the dot on the month grid). Deadlines (zero-length, or around 11:59 PM) read as **Due 11:59 PM** in that color. Scroll the list when it is longer than the panel. Click the month header, or the **Month** chip, to get the month grid back; hover a day and that day's events open in a panel beside the island. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
 
 The secret address is a private link: anyone who has it can read that calendar, so treat it like a password. The feed is refreshed in the background (every 15 minutes by default). If the PC is offline, the island keeps the last events it successfully loaded.
 
@@ -3606,6 +3606,15 @@ std::atomic<int> g_gcalGridMonth{0};
 std::atomic<int> g_gcalHoverDay{-1};
 std::atomic<int> g_gcalHoverYear{0};
 std::atomic<int> g_gcalHoverMonth{0};
+// Day-detail side panel. Its window lives on the render thread; the hit rect is
+// the visible pill in screen pixels (the shadow pad stays click-through).
+constexpr wchar_t kDayPanelClass[] = L"Windhawk.DynamicIslandDayPanel";
+HWND g_dayPanelHwnd = nullptr;
+bool g_dayPanelClassRegistered = false;
+bool g_dayPanelHitLive = false;
+RECT g_dayPanelHit{0, 0, 0, 0};
+std::atomic<bool> g_dayPanelPointer{false};
+std::atomic<float> g_dayPanelWheel{0.0f};
 HANDLE g_lyricsThread = nullptr;
 HANDLE g_notificationThread = nullptr;
 HANDLE g_bluetoothThread = nullptr;
@@ -3624,6 +3633,47 @@ std::atomic<int> g_lyricsEffectiveOffsetBtMs{0};      // Bluetooth output: setti
 // VolumeNotifyClient) so the Bluetooth watcher, which comes earlier in the file, can set it.
 std::atomic<bool> g_volumeEndpointStale{true};
 std::atomic<bool> g_layoutDirty = true;
+
+LRESULT CALLBACK DayPanelWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_MOUSEACTIVATE:
+            return MA_NOACTIVATE;
+        case WM_NCHITTEST: {
+            if (!g_dayPanelHitLive) return HTTRANSPARENT;
+            POINT pt{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+            if (PtInRect(&g_dayPanelHit, pt)) return HTCLIENT;
+            return HTTRANSPARENT;
+        }
+        case WM_MOUSEMOVE:
+            g_dayPanelPointer.store(true, std::memory_order_relaxed);
+            {
+                TRACKMOUSEEVENT tme = {};
+                tme.cbSize = sizeof(tme);
+                tme.dwFlags = TME_LEAVE;
+                tme.hwndTrack = hwnd;
+                TrackMouseEvent(&tme);
+            }
+            return 0;
+        case WM_MOUSELEAVE:
+            g_dayPanelPointer.store(false, std::memory_order_relaxed);
+            g_layoutDirty = true;
+            return 0;
+        case WM_MOUSEWHEEL: {
+            const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            if (delta != 0) {
+                const float px = -static_cast<float>(delta) / static_cast<float>(WHEEL_DELTA) * 64.0f;
+                float cur = g_dayPanelWheel.load(std::memory_order_relaxed);
+                while (!g_dayPanelWheel.compare_exchange_weak(cur, cur + px, std::memory_order_relaxed)) {
+                }
+                g_layoutDirty = true;
+            }
+            return 0;
+        }
+        case WM_ERASEBKGND:
+            return 1;
+    }
+    return DefWindowProcW(hwnd, msg, wParam, lParam);
+}
 std::atomic<bool> g_clickExpanded = false;
 std::atomic<int> g_pressedMediaButton = -1;
 std::atomic<int> g_hoveredMediaButton = -1;
@@ -5725,6 +5775,7 @@ struct Slot {
 };
 
 Slot g_slots[kMaxPills];
+Slot g_panelSlot;  // blur behind the day-detail side panel; not one of the island pills
 SetWindowCompositionAttribute_t g_setWca = nullptr;
 bool g_resolved = false;
 bool g_supported = false;  // API present and Windows 10 1803 or newer
@@ -5868,8 +5919,13 @@ void HideSlot(Slot& s) {
     s.accentState = -1;
 }
 
+void HidePanel() {
+    HideSlot(g_panelSlot);
+}
+
 void HideAll() {
     for (Slot& s : g_slots) HideSlot(s);
+    HidePanel();
     g_lastSync = {};
 }
 
@@ -5880,6 +5936,10 @@ void DestroyAll() {
         }
         s = Slot{};
     }
+    if (g_panelSlot.hwnd && IsWindow(g_panelSlot.hwnd)) {
+        DestroyWindow(g_panelSlot.hwnd);
+    }
+    g_panelSlot = Slot{};
     g_lastSync = {};
     if (g_classRegistered) {
         UnregisterClassW(kClassName, GetModuleHandleW(nullptr));
@@ -6064,6 +6124,46 @@ void Sync(HWND island, POINT origin, const D2D1_RECT_F* rects, const float* radi
             g_lastSync.radius[i] = g_lastSync.lift[i] = 0;
         }
     }
+}
+
+// Blur window for the day panel. Kept out of g_slots so Sync()'s "hide the
+// unused island pills" pass cannot dismiss it. `panel` is the layered window
+// this backdrop sits directly behind.
+void SyncPanel(HWND panel, float left, float top, float right, float bottom, float radius,
+               BackdropMaterial material, const D2D1_COLOR_F& tint, float tintAlpha) {
+    if (material == BackdropMaterial::None || !panel || !IsWindowVisible(panel) || !Available() ||
+        Backdrop::ClipUiActiveCached()) {
+        HidePanel();
+        return;
+    }
+    constexpr int inset = 1;
+    const int x = static_cast<int>(std::lround(left)) + inset;
+    const int y = static_cast<int>(std::lround(top)) + inset;
+    const int r = static_cast<int>(std::lround(right)) - inset;
+    const int b = static_cast<int>(std::lround(bottom)) - inset;
+    const int w = r - x;
+    const int h = b - y;
+    if (w < 4 || h < 4) {
+        HidePanel();
+        return;
+    }
+    int rad = static_cast<int>(std::lround(radius)) - inset;
+    rad = std::clamp(rad, 0, std::min(w, h) / 2);
+
+    int state = kAccentEnableBlurBehind;
+    DWORD color = ColorToAccentAbgr(tint, tintAlpha * 0.22f);
+    if (material == BackdropMaterial::Acrylic) {
+        state = kAccentEnableAcrylicBlurBehind;
+        color = ColorToAccentAbgr(tint, tintAlpha);
+    }
+    const bool wantTopMost = g_settings.alwaysOnTop;
+    if (!g_panelSlot.hwnd) {
+        g_panelSlot.hwnd = CreateBackdropWindow(panel);
+        g_panelSlot.topMost = wantTopMost;
+        if (!g_panelSlot.hwnd) return;
+    }
+    ApplyAccent(g_panelSlot, state, color);
+    PlaceSlot(g_panelSlot, panel, x, y, w, h, rad, 0, wantTopMost);
 }
 
 }  // namespace DwmBackdrop
@@ -15216,6 +15316,37 @@ struct CollapsedLyricLine {
     bool isTitle = false;  // true when this is the media-title fallback, not a lyric line
 };
 
+// One row in the day-detail side panel. Copied out of the snapshot so a
+// cross-fade can keep the previous day after the snapshot moves on.
+struct DayPanelItem {
+    std::wstring title;
+    std::wstring location;
+    std::wstring when;
+    uint32_t color = 0x039BE5;
+    bool due = false;
+    bool happening = false;
+    bool past = false;
+    float h = 26.0f;
+};
+
+// Content pixels. The panel window is this size times sizeScale, same as the island.
+struct DayPanelMetrics {
+    static constexpr float kW = 300.0f;
+    static constexpr float kMaxH = 360.0f;
+    static constexpr float kClosedW = 52.0f;
+    static constexpr float kClosedH = 36.0f;
+    static constexpr float kPadX = 16.0f;
+    static constexpr float kHeaderTop = 12.0f;
+    static constexpr float kHeaderH = 22.0f;
+    static constexpr float kListTop = 44.0f;
+    static constexpr float kListBottom = 12.0f;
+    static constexpr float kRow = 26.0f;
+    static constexpr float kRowLoc = 38.0f;
+    static constexpr float kGap = 2.0f;
+    static constexpr float kTimeW = 96.0f;
+    static constexpr float kMinH = kListTop + kRow + kListBottom;
+};
+
 class Renderer {
    public:
     bool Initialize(HWND hwnd) {
@@ -15255,6 +15386,9 @@ class Renderer {
     bool Render(const SharedState& state, const Settings& settings, const Activity& primary,
                 const std::optional<Activity>& secondary, float width, float height,
                 float nudge, bool hover, bool pinned, double now) {
+        // A collapsed or non-calendar frame never reaches the month grid, so a
+        // stale "grid is on screen" flag must not keep the day panel open.
+        g_gcalGridValid.store(false, std::memory_order_relaxed);
         EnsureTextFormats(settings.sizeScale, settings.fontFamily, settings.textScale);
 
         width = std::max(width, 0.0f);
@@ -15423,6 +15557,7 @@ class Renderer {
     }
 
     void Shutdown() {
+        DestroyDayPanel();
         ReleaseCachedResources();
         marqueeTitleCache_.layout.Reset();
         marqueeArtistCache_.layout.Reset();
@@ -15607,6 +15742,803 @@ class Renderer {
         metrics.sectionWidth = section;
         metrics.totalWidth = MediaPillLayout::kBaseWidth + section;
         return metrics;
+    }
+
+    void ReleaseDrawBrushes() {
+        brushPool_.clear();
+        layerPool_.clear();
+        brushPoolUsed_ = 0;
+        layerPoolUsed_ = 0;
+        raisedBrush_.Reset();
+        raisedStrongBrush_.Reset();
+        accentBrush_.Reset();
+        textBrush_.Reset();
+        mutedBrush_.Reset();
+        tintBrush_.Reset();
+        shadowBrush_.Reset();
+        depthGrad_ = LinearGradientSlot{};
+        trackGrad_ = LinearGradientSlot{};
+        bloomGrad_ = RadialGradientSlot{};
+        swapGroupLayer_.Reset();
+    }
+
+    void BindSurfaceBrushes(const Settings& settings) {
+        pillBgColor_ = settings.pillBgColor;
+        settingsOpacity_ = settings.pillOpacity;
+        D2D1_COLOR_F primary = settings.textPrimaryColor;
+        primary.a = 0.98f;
+        if (!textBrush_) target_->CreateSolidColorBrush(primary, &textBrush_);
+        else textBrush_->SetColor(primary);
+        D2D1_COLOR_F secondary = settings.textSecondaryColor;
+        secondary.a = 0.90f;
+        if (!mutedBrush_) target_->CreateSolidColorBrush(secondary, &mutedBrush_);
+        else mutedBrush_->SetColor(secondary);
+        if (!accentBrush_) target_->CreateSolidColorBrush(currentAccent_, &accentBrush_);
+        else accentBrush_->SetColor(currentAccent_);
+        D2D1_COLOR_F tintColor = D2D1::ColorF(0.010f, 0.010f, 0.012f, settings.tintOpacity);
+        if (!tintBrush_) target_->CreateSolidColorBrush(tintColor, &tintBrush_);
+        else tintBrush_->SetColor(tintColor);
+        if (!shadowBrush_) target_->CreateSolidColorBrush(D2D1::ColorF(0, 0, 0, 0.70f), &shadowBrush_);
+        BuildMaterialTokens(settings);
+    }
+
+    bool EnsurePanelBitmap(int logicalW, int logicalH) {
+        if (logicalW < 1) logicalW = 1;
+        if (logicalH < 1) logicalH = 1;
+        if (panelDib_ && logicalW <= panelCapW_ && logicalH <= panelCapH_) {
+            panelBmpW_ = logicalW;
+            panelBmpH_ = logicalH;
+            return true;
+        }
+        const int width = ((logicalW + 63) / 64) * 64 + 64;
+        const int height = ((logicalH + 31) / 32) * 32 + 32;
+        if (panelOld_ && panelDc_) {
+            SelectObject(panelDc_, panelOld_);
+            panelOld_ = nullptr;
+        }
+        if (panelDib_) {
+            DeleteObject(panelDib_);
+            panelDib_ = nullptr;
+        }
+        if (!panelDc_) {
+            HDC screen = GetDC(nullptr);
+            panelDc_ = CreateCompatibleDC(screen);
+            ReleaseDC(nullptr, screen);
+            if (!panelDc_) return false;
+        }
+        BITMAPINFO bi = {};
+        bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+        bi.bmiHeader.biWidth = width;
+        bi.bmiHeader.biHeight = -height;
+        bi.bmiHeader.biPlanes = 1;
+        bi.bmiHeader.biBitCount = 32;
+        bi.bmiHeader.biCompression = BI_RGB;
+        void* bits = nullptr;
+        panelDib_ = CreateDIBSection(panelDc_, &bi, DIB_RGB_COLORS, &bits, nullptr, 0);
+        if (!panelDib_) return false;
+        panelOld_ = static_cast<HBITMAP>(SelectObject(panelDc_, panelDib_));
+        panelCapW_ = width;
+        panelCapH_ = height;
+        panelBmpW_ = logicalW;
+        panelBmpH_ = logicalH;
+        return true;
+    }
+
+    bool EnsureDayPanelWindow() {
+        if (g_dayPanelHwnd && IsWindow(g_dayPanelHwnd)) return true;
+        g_dayPanelHwnd = nullptr;
+        HINSTANCE inst = GetModuleHandleW(nullptr);
+        if (!g_dayPanelClassRegistered) {
+            WNDCLASSEXW wc = {};
+            wc.cbSize = sizeof(wc);
+            wc.lpfnWndProc = DayPanelWndProc;
+            wc.hInstance = inst;
+            wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+            wc.lpszClassName = kDayPanelClass;
+            if (!RegisterClassExW(&wc) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) return false;
+            g_dayPanelClassRegistered = true;
+        }
+        g_dayPanelHwnd = CreateWindowExW(
+            WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+            kDayPanelClass, L"", WS_POPUP, 0, 0, 16, 16, nullptr, nullptr, inst, nullptr);
+        return g_dayPanelHwnd != nullptr;
+    }
+
+    void DestroyDayPanel() {
+        g_dayPanelHitLive = false;
+        g_dayPanelPointer.store(false, std::memory_order_relaxed);
+        g_dayPanelWheel.store(0.0f, std::memory_order_relaxed);
+        DwmBackdrop::HidePanel();
+        if (g_dayPanelHwnd) {
+            if (IsWindow(g_dayPanelHwnd)) DestroyWindow(g_dayPanelHwnd);
+            g_dayPanelHwnd = nullptr;
+        }
+        if (g_dayPanelClassRegistered) {
+            UnregisterClassW(kDayPanelClass, GetModuleHandleW(nullptr));
+            g_dayPanelClassRegistered = false;
+        }
+        if (panelTarget_) {
+            // Dropping the target while target_ still aliases it would free the
+            // island's render target on the next brush reset.
+            if (target_ == panelTarget_) target_.Reset();
+            panelTarget_.Reset();
+        }
+        if (panelOld_ && panelDc_) {
+            SelectObject(panelDc_, panelOld_);
+            panelOld_ = nullptr;
+        }
+        if (panelDib_) {
+            DeleteObject(panelDib_);
+            panelDib_ = nullptr;
+        }
+        if (panelDc_) {
+            DeleteDC(panelDc_);
+            panelDc_ = nullptr;
+        }
+        panelBmpW_ = panelBmpH_ = panelCapW_ = panelCapH_ = 0;
+        dayEngaged_ = false;
+        dayOpen_ = -1;
+        dayKey_ = 0;
+    }
+
+    void ParkDayPanel() {
+        dayOpen_ = -1;
+        dayEngaged_ = false;
+        dayHotSince_ = -1.0;
+        dayLeaveSince_ = -1.0;
+        dayFade_.Reset(0.0f);
+        dayW_.Reset(0.0f);
+        dayH_.Reset(0.0f);
+        g_dayPanelHitLive = false;
+        g_dayPanelPointer.store(false, std::memory_order_relaxed);
+        g_dayPanelWheel.store(0.0f, std::memory_order_relaxed);
+        if (g_dayPanelHwnd && IsWindow(g_dayPanelHwnd) && IsWindowVisible(g_dayPanelHwnd)) {
+            ShowWindow(g_dayPanelHwnd, SW_HIDE);
+        }
+        DwmBackdrop::HidePanel();
+    }
+
+    void HideDayPanelSettled() {
+        g_dayPanelHitLive = false;
+        g_dayPanelPointer.store(false, std::memory_order_relaxed);
+        if (g_dayPanelHwnd && IsWindow(g_dayPanelHwnd) && IsWindowVisible(g_dayPanelHwnd)) {
+            ShowWindow(g_dayPanelHwnd, SW_HIDE);
+        }
+        DwmBackdrop::HidePanel();
+        dayEngaged_ = false;
+    }
+
+    // Draws the side panel into its own layered window. target_ is swapped for
+    // the duration so DrawPillSurface / the brush pool land on this target,
+    // then restored. EnsureBrushes is not called: that would step the accent
+    // lerp a second time this frame.
+    bool PresentDayPanel(const Settings& settings, float screenLeft, float screenTop, float reveal) {
+        if (!d2dFactory_ || !EnsureDayPanelWindow()) return false;
+        if (!panelTarget_) {
+            D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+                D2D1_RENDER_TARGET_TYPE_DEFAULT,
+                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+                0.0f, 0.0f, D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE);
+            if (FAILED(d2dFactory_->CreateDCRenderTarget(&props, &panelTarget_)) || !panelTarget_) {
+                return false;
+            }
+        }
+        EnsureTextFormats(settings.sizeScale, settings.fontFamily, settings.textScale);
+
+        const float scale = std::max(settings.sizeScale, 0.01f);
+        const float pillW = std::max(dayW_.value, 1.0f);
+        const float pillH = std::max(dayH_.value, 1.0f);
+        const int winW = std::max(1, static_cast<int>(std::ceil(pillW + kRenderPadX * 2.0f)));
+        const int winH = std::max(1, static_cast<int>(std::ceil(pillH + kRenderPadY * 2.0f)));
+        if (!EnsurePanelBitmap(winW, winH)) return false;
+
+        const int originX = static_cast<int>(std::lround(screenLeft - kRenderPadX));
+        const int originY = static_cast<int>(std::lround(screenTop - kRenderPadY));
+        const float pillLeft = screenLeft - static_cast<float>(originX);
+        const float pillTop = screenTop - static_cast<float>(originY);
+        const D2D1_RECT_F pill = D2D1::RectF(pillLeft, pillTop, pillLeft + pillW, pillTop + pillH);
+
+        float radius = settings.w11Style ? 8.0f * scale : pillH * 0.5f;
+        if (settings.notchStyle) radius = 16.0f * scale;
+        else if (!settings.w11Style) radius = std::min(radius, 44.0f * scale);
+        radius = std::min(radius, std::min(pillW, pillH) * 0.5f);
+
+        ComPtr<ID2D1DCRenderTarget> savedTarget = target_;
+        target_ = panelTarget_;
+        ReleaseDrawBrushes();
+
+        RECT rc{0, 0, panelBmpW_, panelBmpH_};
+        HRESULT hr = target_->BindDC(panelDc_, &rc);
+        bool presented = false;
+        if (SUCCEEDED(hr)) {
+            target_->BeginDraw();
+            target_->SetTransform(D2D1::Matrix3x2F::Identity());
+            target_->Clear(D2D1::ColorF(0, 0.0f));
+            BeginFrameResources();
+            BindSurfaceBrushes(settings);
+
+            const float savedOpacity = settingsOpacity_;
+            settingsOpacity_ = savedOpacity * Clamp(reveal, 0.0f, 1.0f);
+            DrawSoftShadow(pill, radius);
+            settingsOpacity_ = savedOpacity;
+            DrawPillSurface(pill, radius, IslandKind::Idle, settings);
+
+            if (reveal > 0.02f) {
+                D2D1_MATRIX_3X2_F oldTransform;
+                target_->GetTransform(&oldTransform);
+                const D2D1_POINT_2F center = D2D1::Point2F((pill.left + pill.right) * 0.5f,
+                                                           (pill.top + pill.bottom) * 0.5f);
+                target_->SetTransform(D2D1::Matrix3x2F::Scale(scale, scale, center) * oldTransform);
+                const float inv = 1.0f / scale;
+                const float unW = pillW * inv;
+                const float unH = pillH * inv;
+                const D2D1_RECT_F content = D2D1::RectF(center.x - unW * 0.5f, center.y - unH * 0.5f,
+                                                        center.x + unW * 0.5f, center.y + unH * 0.5f);
+
+                target_->PushAxisAlignedClip(content, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+                ID2D1Layer* revealLayer = nullptr;
+                if (reveal < 0.995f) {
+                    revealLayer = AcquireLayer();
+                    if (revealLayer) {
+                        target_->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(), nullptr,
+                                                                  D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+                                                                  D2D1::IdentityMatrix(), reveal, nullptr,
+                                                                  D2D1_LAYER_OPTIONS_NONE),
+                                           revealLayer);
+                    }
+                }
+
+                IDWriteTextFormat* titleFmt = agendaTitleFormat_ ? agendaTitleFormat_.Get() : textFormat_.Get();
+                IDWriteTextFormat* timeFmt = agendaTimeFormat_ ? agendaTimeFormat_.Get() : textFormat_.Get();
+                IDWriteTextFormat* metaFmt = agendaMetaFormat_ ? agendaMetaFormat_.Get() : smallTextFormat_.Get();
+                IDWriteTextFormat* dayFmt = agendaDayFormat_ ? agendaDayFormat_.Get() : boldTextFormat_.Get();
+
+                auto drawHeader = [&](const std::wstring& header, const std::wstring& badge, float opacity) {
+                    if (opacity <= 0.01f || header.empty()) return;
+                    ID2D1Layer* layer = nullptr;
+                    if (opacity < 0.995f) {
+                        layer = AcquireLayer();
+                        if (layer) {
+                            target_->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(), nullptr,
+                                                                      D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+                                                                      D2D1::IdentityMatrix(), opacity, nullptr,
+                                                                      D2D1_LAYER_OPTIONS_NONE),
+                                               layer);
+                        }
+                    }
+                    const float badgeW = badge.empty() ? 0.0f : 72.0f;
+                    const float dateRight = content.right - DayPanelMetrics::kPadX - (badgeW > 0.0f ? badgeW + 8.0f : 0.0f);
+                    if (dayFmt && textBrush_) {
+                        textBrush_->SetOpacity(0.96f);
+                        target_->DrawTextW(header.c_str(), static_cast<UINT32>(header.size()), dayFmt,
+                                           D2D1::RectF(content.left + DayPanelMetrics::kPadX,
+                                                       content.top + DayPanelMetrics::kHeaderTop,
+                                                       dateRight,
+                                                       content.top + DayPanelMetrics::kHeaderTop + DayPanelMetrics::kHeaderH),
+                                           textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    }
+                    if (!badge.empty() && metaFmt && raisedBrush_) {
+                        const float chipH = 18.0f;
+                        const float chipT = content.top + DayPanelMetrics::kHeaderTop +
+                                            (DayPanelMetrics::kHeaderH - chipH) * 0.5f;
+                        const D2D1_RECT_F chip = D2D1::RectF(content.right - DayPanelMetrics::kPadX - badgeW, chipT,
+                                                            content.right - DayPanelMetrics::kPadX, chipT + chipH);
+                        target_->FillRoundedRectangle(D2D1::RoundedRect(chip, chipH * 0.5f, chipH * 0.5f),
+                                                      raisedBrush_.Get());
+                        D2D1_COLOR_F accent = currentAccent_;
+                        accent.a = 0.95f * settingsOpacity_;
+                        if (ID2D1SolidColorBrush* chipText = AcquireBrush(accent)) {
+                            metaFmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+                            metaFmt->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+                            target_->DrawTextW(badge.c_str(), static_cast<UINT32>(badge.size()), metaFmt, chip,
+                                               chipText, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                            metaFmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+                            metaFmt->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                        }
+                    }
+                    if (layer) target_->PopLayer();
+                };
+
+                drawHeader(dayHeader_, dayBadge_, dayMix_);
+                if (dayMix_ < 0.999f) drawHeader(dayPrevHeader_, dayPrevBadge_, 1.0f - dayMix_);
+
+                if (ID2D1SolidColorBrush* hr = AcquireBrush(
+                        WithAlpha(material_.hairline, material_.hairline.a * settingsOpacity_))) {
+                    const float y = content.top + DayPanelMetrics::kListTop - 6.0f;
+                    target_->DrawLine(D2D1::Point2F(content.left + DayPanelMetrics::kPadX, y),
+                                      D2D1::Point2F(content.right - DayPanelMetrics::kPadX, y), hr, 1.0f);
+                }
+
+                const D2D1_RECT_F list = D2D1::RectF(content.left,
+                                                    content.top + DayPanelMetrics::kListTop,
+                                                    content.right,
+                                                    content.bottom - DayPanelMetrics::kListBottom);
+                const bool listFits = list.bottom > list.top + 4.0f;
+                if (listFits) {
+                target_->PushAxisAlignedClip(list, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
+
+                auto drawRows = [&](const std::vector<DayPanelItem>& items, bool empty, float opacity) {
+                    if (opacity <= 0.01f) return;
+                    ID2D1Layer* layer = nullptr;
+                    if (opacity < 0.995f) {
+                        layer = AcquireLayer();
+                        if (layer) {
+                            target_->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(), nullptr,
+                                                                      D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+                                                                      D2D1::IdentityMatrix(), opacity, nullptr,
+                                                                      D2D1_LAYER_OPTIONS_NONE),
+                                               layer);
+                        }
+                    }
+                    const float timeLeft = content.left + DayPanelMetrics::kPadX;
+                    const float titleLeft = timeLeft + DayPanelMetrics::kTimeW;
+                    const float titleRight = content.right - DayPanelMetrics::kPadX;
+                    if (empty || items.empty()) {
+                        if (metaFmt && mutedBrush_) {
+                            mutedBrush_->SetOpacity(0.48f);
+                            const std::wstring quiet = Loc(L"Nothing scheduled");
+                            target_->DrawTextW(quiet.c_str(), static_cast<UINT32>(quiet.size()), metaFmt,
+                                               D2D1::RectF(timeLeft, list.top, titleRight, list.top + DayPanelMetrics::kRow),
+                                               mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                        }
+                    } else {
+                        float y = list.top - dayScroll_;
+                        for (const DayPanelItem& item : items) {
+                            const float rowTop = y;
+                            const float rowH = item.h;
+                            y += rowH + DayPanelMetrics::kGap;
+                            if (rowTop + rowH < list.top - 8.0f || rowTop > list.bottom + 8.0f) continue;
+                            const float fade = item.past ? 0.38f : 1.0f;
+                            const float titleBand = item.location.empty() ? rowH : 16.0f;
+                            if (item.happening) {
+                                D2D1_COLOR_F wash = GcalRgb(item.color, 0.22f * fade * settingsOpacity_);
+                                if (ID2D1SolidColorBrush* washBrush = AcquireBrush(wash)) {
+                                    target_->FillRoundedRectangle(
+                                        D2D1::RoundedRect(D2D1::RectF(content.left + 8.0f, rowTop + 1.0f,
+                                                                      titleRight, rowTop + rowH - 1.0f),
+                                                          6.0f, 6.0f),
+                                        washBrush);
+                                }
+                            }
+                            D2D1_COLOR_F bar = GcalRgb(item.color, fade * settingsOpacity_);
+                            if (ID2D1SolidColorBrush* barBrush = AcquireBrush(bar)) {
+                                const float barH = 12.0f;
+                                const float barTop = rowTop + (titleBand - barH) * 0.5f;
+                                target_->FillRoundedRectangle(
+                                    D2D1::RoundedRect(D2D1::RectF(timeLeft, barTop, timeLeft + 3.0f, barTop + barH),
+                                                      1.5f, 1.5f),
+                                    barBrush);
+                            }
+                            const float timeInset = 8.0f;
+                            const D2D1_RECT_F timeRect = D2D1::RectF(timeLeft + timeInset, rowTop,
+                                                                    timeLeft + DayPanelMetrics::kTimeW - 4.0f,
+                                                                    rowTop + titleBand);
+                            const bool coloredTime = item.due || item.happening;
+                            if (coloredTime && timeFmt) {
+                                D2D1_COLOR_F c = GcalRgb(item.color, fade * settingsOpacity_);
+                                if (ID2D1SolidColorBrush* timeColor = AcquireBrush(c)) {
+                                    DWRITE_TEXT_METRICS tm{};
+                                    if (auto layout = MakeLineLayout(item.when, timeFmt, DayPanelMetrics::kTimeW - timeInset - 4.0f,
+                                                                     &tm, true)) {
+                                        target_->DrawTextLayout(D2D1::Point2F(timeRect.left, rowTop + 1.0f), layout.Get(),
+                                                                timeColor);
+                                    }
+                                }
+                            } else if (timeFmt && mutedBrush_) {
+                                mutedBrush_->SetOpacity(0.78f * fade);
+                                DWRITE_TEXT_METRICS tm{};
+                                if (auto layout = MakeLineLayout(item.when, timeFmt, DayPanelMetrics::kTimeW - timeInset - 4.0f,
+                                                                 &tm, true)) {
+                                    target_->DrawTextLayout(D2D1::Point2F(timeRect.left, rowTop + 1.0f), layout.Get(),
+                                                            mutedBrush_.Get());
+                                }
+                            }
+                            if (titleFmt && textBrush_) {
+                                textBrush_->SetOpacity(0.96f * fade);
+                                DWRITE_TEXT_METRICS tm{};
+                                if (auto layout = MakeLineLayout(item.title, titleFmt,
+                                                                 std::max(12.0f, titleRight - titleLeft), &tm, true)) {
+                                    target_->DrawTextLayout(D2D1::Point2F(titleLeft, rowTop), layout.Get(),
+                                                            textBrush_.Get());
+                                }
+                            }
+                            if (!item.location.empty() && metaFmt && mutedBrush_) {
+                                mutedBrush_->SetOpacity(0.62f * fade);
+                                DWRITE_TEXT_METRICS tm{};
+                                if (auto layout = MakeLineLayout(item.location, metaFmt,
+                                                                 std::max(12.0f, titleRight - titleLeft), &tm, true)) {
+                                    target_->DrawTextLayout(D2D1::Point2F(titleLeft, rowTop + 16.0f), layout.Get(),
+                                                            mutedBrush_.Get());
+                                }
+                            }
+                        }
+                    }
+                    if (layer) target_->PopLayer();
+                };
+
+                drawRows(dayItems_, dayEmpty_, dayMix_);
+                if (dayMix_ < 0.999f) drawRows(dayPrevItems_, dayPrevEmpty_, 1.0f - dayMix_);
+                target_->PopAxisAlignedClip();
+                }
+
+                auto fadeEdge = [&](bool topEdge) {
+                    const float fade = 16.0f;
+                    const D2D1_RECT_F band = topEdge
+                        ? D2D1::RectF(list.left, list.top, list.right, list.top + fade)
+                        : D2D1::RectF(list.left, list.bottom - fade, list.right, list.bottom);
+                    D2D1_COLOR_F solid = material_.base;
+                    solid.a = Clamp(solid.a * settingsOpacity_, 0.0f, 1.0f);
+                    D2D1_COLOR_F clear = solid;
+                    clear.a = 0.0f;
+                    D2D1_GRADIENT_STOP stops[2];
+                    if (topEdge) {
+                        stops[0] = {0.0f, solid};
+                        stops[1] = {1.0f, clear};
+                    } else {
+                        stops[0] = {0.0f, clear};
+                        stops[1] = {1.0f, solid};
+                    }
+                    ComPtr<ID2D1GradientStopCollection> stopsColl;
+                    if (FAILED(target_->CreateGradientStopCollection(stops, 2, D2D1_GAMMA_2_2,
+                                                                     D2D1_EXTEND_MODE_CLAMP, &stopsColl)) ||
+                        !stopsColl) {
+                        return;
+                    }
+                    ComPtr<ID2D1LinearGradientBrush> fadeBrush;
+                    if (FAILED(target_->CreateLinearGradientBrush(
+                            D2D1::LinearGradientBrushProperties(D2D1::Point2F(band.left, band.top),
+                                                                D2D1::Point2F(band.left, band.bottom)),
+                            stopsColl.Get(), &fadeBrush)) ||
+                        !fadeBrush) {
+                        return;
+                    }
+                    target_->FillRectangle(band, fadeBrush.Get());
+                };
+                if (listFits && dayScroll_ > 0.5f) fadeEdge(true);
+                if (listFits && dayMaxScroll_ - dayScroll_ > 0.5f) fadeEdge(false);
+
+                if (revealLayer) target_->PopLayer();
+                target_->PopAxisAlignedClip();
+                target_->SetTransform(oldTransform);
+            }
+
+            hr = target_->EndDraw();
+            presented = SUCCEEDED(hr);
+        }
+
+        ReleaseDrawBrushes();
+        target_ = savedTarget;
+        if (FAILED(hr)) panelTarget_.Reset();
+        if (!presented) return false;
+
+        const BYTE alpha = static_cast<BYTE>(Clamp(settings.pillOpacity, 0.35f, 1.0f) *
+                                             Clamp(dayFade_.value, 0.0f, 1.0f) * 255.0f);
+        POINT src = {0, 0};
+        SIZE size = {panelBmpW_, panelBmpH_};
+        POINT dst = {originX, originY};
+        BLENDFUNCTION blend = {};
+        blend.BlendOp = AC_SRC_OVER;
+        blend.SourceConstantAlpha = alpha;
+        blend.AlphaFormat = AC_SRC_ALPHA;
+        UPDATELAYEREDWINDOWINFO info = {};
+        info.cbSize = sizeof(info);
+        info.pptDst = &dst;
+        info.psize = &size;
+        info.hdcSrc = panelDc_;
+        info.pptSrc = &src;
+        info.pblend = &blend;
+        info.dwFlags = ULW_ALPHA;
+        if (!UpdateLayeredWindowIndirect(g_dayPanelHwnd, &info)) return false;
+
+        const bool stacked = GetWindow(g_hwnd, GW_HWNDNEXT) == g_dayPanelHwnd;
+        RECT wr{};
+        GetWindowRect(g_dayPanelHwnd, &wr);
+        if (!stacked || wr.left != originX || wr.top != originY ||
+            (wr.right - wr.left) != winW || (wr.bottom - wr.top) != winH ||
+            !IsWindowVisible(g_dayPanelHwnd)) {
+            SetWindowPos(g_dayPanelHwnd, g_hwnd, originX, originY, winW, winH,
+                         SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        }
+
+        g_dayPanelHit.left = static_cast<LONG>(std::floor(screenLeft));
+        g_dayPanelHit.top = static_cast<LONG>(std::floor(screenTop));
+        g_dayPanelHit.right = static_cast<LONG>(std::ceil(screenLeft + pillW));
+        g_dayPanelHit.bottom = static_cast<LONG>(std::ceil(screenTop + pillH));
+        g_dayPanelHitLive = true;
+
+        DwmBackdrop::SyncPanel(g_dayPanelHwnd, screenLeft, screenTop, screenLeft + pillW, screenTop + pillH,
+                               radius, settings.backdropMaterial, pillBgColor_, settings.backdropTint);
+        return true;
+    }
+
+    // True while the panel's own springs or cross-fade are still moving, so the
+    // frame pacer stays on vsync. A settled panel keeps its last pixels.
+    bool TickDayPanel(const SharedState& state, const RECT& islandPill, float dt, double now, bool monthLive) {
+        if (!g_hwnd || !IsWindow(g_hwnd)) {
+            if (dayEngaged_ || g_dayPanelHwnd) HideDayPanelSettled();
+            return false;
+        }
+        const Settings settings = GetSettingsCopy();
+        const float scale = std::max(settings.sizeScale, 0.01f);
+        const bool onPanel = g_dayPanelPointer.load(std::memory_order_relaxed) && g_dayPanelHwnd &&
+                             IsWindowVisible(g_dayPanelHwnd);
+
+        int cell = -1;
+        int cellYear = 0;
+        int cellMonth = 0;
+        if (monthLive) {
+            cell = g_gcalHoverDay.load(std::memory_order_relaxed);
+            cellYear = g_gcalHoverYear.load(std::memory_order_relaxed);
+            cellMonth = g_gcalHoverMonth.load(std::memory_order_relaxed);
+            if (cell < 1) cell = -1;
+        }
+
+        if (!monthLive) {
+            dayOpen_ = -1;
+            dayHotSince_ = -1.0;
+            dayLeaveSince_ = -1.0;
+        } else if (cell > 0) {
+            dayLeaveSince_ = -1.0;
+            if (dayHotSince_ < 0.0) dayHotSince_ = now;
+            const bool already = dayEngaged_ && dayFade_.value > 0.05f;
+            if (already || (now - dayHotSince_) >= 0.10) {
+                dayOpen_ = cell;
+                dayYear_ = cellYear;
+                dayMonth_ = cellMonth;
+            }
+        } else if (onPanel && dayOpen_ > 0) {
+            dayLeaveSince_ = -1.0;
+            dayHotSince_ = now;
+        } else {
+            dayHotSince_ = -1.0;
+            if (dayOpen_ > 0) {
+                if (dayLeaveSince_ < 0.0) dayLeaveSince_ = now;
+                if ((now - dayLeaveSince_) >= 0.15) dayOpen_ = -1;
+            }
+        }
+
+        const bool open = dayOpen_ > 0;
+        float contentTarget = DayPanelMetrics::kClosedH;
+        if (!open && !dayEngaged_) return false;
+
+        if (open && !dayEngaged_) {
+            dayW_.Reset(DayPanelMetrics::kClosedW * scale);
+            dayH_.Reset(DayPanelMetrics::kClosedH * scale);
+            dayFade_.Reset(0.0f);
+            dayEngaged_ = true;
+            dayKey_ = 0;
+            dayMix_ = 1.0f;
+            dayScroll_ = 0.0f;
+            dayPrevItems_.clear();
+            dayPrevHeader_.clear();
+            dayPrevBadge_.clear();
+            dayPrevEmpty_ = true;
+        }
+
+        if (open) {
+            const int key = dayYear_ * 10000 + dayMonth_ * 100 + dayOpen_;
+            if (dayKey_ != 0 && key != dayKey_) {
+                dayPrevItems_ = dayItems_;
+                dayPrevHeader_ = dayHeader_;
+                dayPrevBadge_ = dayBadge_;
+                dayPrevEmpty_ = dayEmpty_;
+                dayMix_ = 0.0f;
+                dayMixStart_ = now;
+                dayScroll_ = 0.0f;
+                g_dayPanelWheel.store(0.0f, std::memory_order_relaxed);
+            }
+            dayKey_ = key;
+
+            dayItems_.clear();
+            dayEmpty_ = true;
+            SYSTEMTIME headerSt{};
+            headerSt.wYear = static_cast<WORD>(dayYear_);
+            headerSt.wMonth = static_cast<WORD>(dayMonth_);
+            headerSt.wDay = static_cast<WORD>(dayOpen_);
+            wchar_t dateBuf[64] = {};
+            if (GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &headerSt, L"ddd, MMM d", dateBuf,
+                                ARRAYSIZE(dateBuf), nullptr) > 0) {
+                dayHeader_ = dateBuf;
+            } else {
+                dayHeader_.clear();
+            }
+            const di_ics::Civil today = di_ics::UnixUtcToLocal(di_ics::UnixNow());
+            const di_ics::Civil tomorrow =
+                di_ics::AddDays(di_ics::Civil{today.year, today.month, today.day, 0, 0, 0}, 1);
+            dayBadge_.clear();
+            if (dayYear_ == today.year && dayMonth_ == today.month && dayOpen_ == today.day) {
+                dayBadge_ = Loc(L"Today");
+            } else if (dayYear_ == tomorrow.year && dayMonth_ == tomorrow.month && dayOpen_ == tomorrow.day) {
+                dayBadge_ = Loc(L"Tomorrow");
+            }
+
+            const GcalSnapshot* snap = state.gcal.get();
+            const int64_t nowUtc = di_ics::UnixNow();
+            const int cur = key;
+            struct Row {
+                int index;
+                bool allDay;
+                bool due;
+                bool happening;
+                bool past;
+                int hour;
+                int minute;
+                int64_t startUtc;
+            };
+            std::vector<Row> rows;
+            if (snap) {
+                rows.reserve(snap->events.size());
+                for (int i = 0; i < static_cast<int>(snap->events.size()); ++i) {
+                    const GcalEvent& ev = snap->events[static_cast<size_t>(i)];
+                    const int start = ev.spanYear * 10000 + ev.spanMonth * 100 + ev.spanDay;
+                    const int end = ev.spanEndYear * 10000 + ev.spanEndMonth * 100 + ev.spanEndDay;
+                    if (cur < start || cur >= end) continue;
+                    di_ics::AgendaInput mark;
+                    mark.allDay = ev.allDay;
+                    mark.startUtc = ev.startUtc;
+                    mark.endUtc = ev.endUtc;
+                    mark.hour = ev.hour;
+                    mark.minute = ev.minute;
+                    Row row;
+                    row.index = i;
+                    row.allDay = ev.allDay;
+                    row.hour = ev.hour;
+                    row.minute = ev.minute;
+                    row.startUtc = ev.startUtc;
+                    row.due = di_ics::AgendaIsDeadline(mark);
+                    row.happening = false;
+                    row.past = false;
+                    if (!ev.allDay && row.due) {
+                        row.past = nowUtc >= ev.startUtc;
+                    } else if (!ev.allDay) {
+                        if (ev.endUtc > ev.startUtc && ev.startUtc <= nowUtc && nowUtc < ev.endUtc) {
+                            row.happening = true;
+                        } else if (ev.endUtc <= nowUtc) {
+                            row.past = true;
+                        }
+                    }
+                    rows.push_back(row);
+                }
+            }
+            std::sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) {
+                if (a.allDay != b.allDay) return a.allDay && !b.allDay;
+                if (a.hour != b.hour) return a.hour < b.hour;
+                if (a.minute != b.minute) return a.minute < b.minute;
+                if (a.startUtc != b.startUtc) return a.startUtc < b.startUtc;
+                return a.index < b.index;
+            });
+            dayEmpty_ = rows.empty();
+            if (snap) {
+                dayItems_.reserve(rows.size());
+                for (const Row& row : rows) {
+                    const GcalEvent& ev = snap->events[static_cast<size_t>(row.index)];
+                    DayPanelItem item;
+                    item.title = ev.summary;
+                    item.location = ev.location;
+                    item.color = ev.colorRgb;
+                    item.due = row.due;
+                    item.happening = row.happening;
+                    item.past = row.past;
+                    item.h = ev.location.empty() ? DayPanelMetrics::kRow : DayPanelMetrics::kRowLoc;
+                    if (ev.allDay) {
+                        item.when = Loc(L"All day");
+                    } else {
+                        SYSTEMTIME whenSt{};
+                        whenSt.wYear = static_cast<WORD>(ev.year);
+                        whenSt.wMonth = static_cast<WORD>(ev.month);
+                        whenSt.wDay = static_cast<WORD>(ev.day);
+                        whenSt.wHour = static_cast<WORD>(ev.hour);
+                        whenSt.wMinute = static_cast<WORD>(ev.minute);
+                        item.when = FormatIslandTime(whenSt, settings.clockFollowSystem, settings.use24HourClock, false);
+                        if (row.due) item.when = std::wstring(Loc(L"Due")) + L" " + item.when;
+                    }
+                    dayItems_.push_back(std::move(item));
+                }
+            }
+
+            float itemsH = DayPanelMetrics::kRow;
+            if (!dayEmpty_) {
+                itemsH = 0.0f;
+                for (size_t i = 0; i < dayItems_.size(); ++i) {
+                    if (i) itemsH += DayPanelMetrics::kGap;
+                    itemsH += dayItems_[i].h;
+                }
+            }
+            float contentH = DayPanelMetrics::kListTop + itemsH + DayPanelMetrics::kListBottom;
+            contentH = Clamp(contentH, DayPanelMetrics::kMinH, DayPanelMetrics::kMaxH);
+            const float viewport = std::max(1.0f, contentH - DayPanelMetrics::kListTop - DayPanelMetrics::kListBottom);
+            dayMaxScroll_ = std::max(0.0f, itemsH - viewport);
+            dayScroll_ += g_dayPanelWheel.exchange(0.0f, std::memory_order_relaxed);
+            if (dayScroll_ < 0.0f) dayScroll_ = 0.0f;
+            if (dayScroll_ > dayMaxScroll_) dayScroll_ = dayMaxScroll_;
+            contentTarget = contentH;
+        } else {
+            g_dayPanelWheel.store(0.0f, std::memory_order_relaxed);
+        }
+
+        if (dayMix_ < 1.0f) {
+            const float t = static_cast<float>((now - dayMixStart_) / 0.16);
+            dayMix_ = t >= 1.0f ? 1.0f : SmoothStep01(Clamp(t, 0.0f, 1.0f));
+            if (dayMix_ >= 1.0f) {
+                dayPrevItems_.clear();
+                dayPrevHeader_.clear();
+                dayPrevBadge_.clear();
+            }
+        }
+
+        float styleS = 1.0f;
+        float styleD = 1.0f;
+        if (settings.animationStyle == AnimationStyle::Smooth) {
+            styleD = 1.35f;
+        } else if (settings.animationStyle == AnimationStyle::Bouncy) {
+            styleS = 1.1f;
+            styleD = 0.70f;
+        } else if (settings.animationStyle == AnimationStyle::Snappy) {
+            styleS = 1.5f;
+            styleD = 1.25f;
+        }
+        const float speed = settings.animationSpeed;
+        auto stepTo = [&](SpringValue& s, float target) {
+            if (speed < 0.01f) {
+                s.Reset(target);
+                return;
+            }
+            const bool grow = target > s.value + 0.01f;
+            const bool shrink = target < s.value - 0.01f;
+            const float stiff = (grow ? 380.0f : shrink ? 200.0f : 280.0f) * styleS;
+            const float damp = (grow ? 26.0f : shrink ? 28.0f : 24.0f) * styleD;
+            s.target = target;
+            s.Step(dt * speed, stiff, damp);
+            if (s.value < 0.0f) {
+                s.value = 0.0f;
+                s.velocity = 0.0f;
+            }
+        };
+
+        const float targetW = (open ? DayPanelMetrics::kW : DayPanelMetrics::kClosedW) * scale;
+        const float targetH = contentTarget * scale;
+        stepTo(dayW_, targetW);
+        stepTo(dayH_, targetH);
+        stepTo(dayFade_, open ? 1.0f : 0.0f);
+
+        const bool moving =
+            std::fabs(dayW_.value - dayW_.target) > 0.5f ||
+            std::fabs(dayH_.value - dayH_.target) > 0.5f ||
+            std::fabs(dayW_.velocity) > 0.5f ||
+            std::fabs(dayH_.velocity) > 0.5f ||
+            std::fabs(dayFade_.value - dayFade_.target) > 0.02f ||
+            std::fabs(dayFade_.velocity) > 0.05f ||
+            dayMix_ < 0.999f;
+
+        if (!open && dayFade_.value <= 0.02f && std::fabs(dayFade_.velocity) < 0.05f) {
+            HideDayPanelSettled();
+            return false;
+        }
+
+        const RECT work = GetAnchorWorkRect();
+        const float gap = 12.0f * scale;
+        const float placeW = std::max(dayW_.target, dayW_.value);
+        float screenLeft = static_cast<float>(islandPill.right) + gap;
+        if (screenLeft + placeW > static_cast<float>(work.right) - 8.0f) {
+            screenLeft = static_cast<float>(islandPill.left) - gap - dayW_.value;
+        }
+        if (screenLeft < static_cast<float>(work.left) + 8.0f) {
+            screenLeft = static_cast<float>(work.left) + 8.0f;
+        }
+        if (screenLeft + dayW_.value > static_cast<float>(work.right) - 8.0f) {
+            screenLeft = static_cast<float>(work.right) - 8.0f - dayW_.value;
+        }
+        float screenTop = static_cast<float>(islandPill.top);
+        if (screenTop + dayH_.value > static_cast<float>(work.bottom) - 8.0f) {
+            screenTop = static_cast<float>(work.bottom) - 8.0f - dayH_.value;
+        }
+        if (screenTop < static_cast<float>(work.top)) screenTop = static_cast<float>(work.top);
+
+        const float closedH = DayPanelMetrics::kClosedH * scale;
+        const float denom = std::max(8.0f, dayH_.target - closedH);
+        const float reveal = SmoothStep01(Clamp((dayH_.value - closedH) / denom, 0.0f, 1.0f));
+        PresentDayPanel(settings, screenLeft, screenTop, reveal);
+        return moving;
     }
 
    private:
@@ -17354,124 +18286,6 @@ class Renderer {
             }
 
             if (++col > 6) { col = 0; ++row; }
-        }
-
-        if (hoverThisMonth && gcalSnap) {
-            std::vector<const GcalEvent*> items;
-            const int cur = local.wYear * 10000 + static_cast<int>(local.wMonth) * 100 + hoverDay;
-            for (const GcalEvent& ev : gcalSnap->events) {
-                const int start = ev.spanYear * 10000 + ev.spanMonth * 100 + ev.spanDay;
-                const int end = ev.spanEndYear * 10000 + ev.spanEndMonth * 100 + ev.spanEndDay;
-                if (cur >= start && cur < end) items.push_back(&ev);
-            }
-            if (!items.empty()) {
-                const int index = hoverDay - 1 + startDayIdx;
-                const int hcol = index % 7;
-                const int hrow = index / 7;
-                const D2D1_RECT_F hot = D2D1::RectF(gridStart + hcol * colW, datesTop + hrow * rowH,
-                                                   gridStart + (hcol + 1) * colW, datesTop + (hrow + 1) * rowH);
-                constexpr float kRow = 16.0f;
-                constexpr float kPad = 7.0f;
-                constexpr float kTimeW = 78.0f;
-                const float maxH = std::max(kRow + kPad * 2.0f, (rect.bottom - rect.top) - 12.0f);
-                int maxRows = static_cast<int>((maxH - kPad * 2.0f) / kRow);
-                if (maxRows < 1) maxRows = 1;
-                int shown = static_cast<int>(items.size());
-                int extra = 0;
-                if (shown > maxRows) {
-                    shown = std::max(1, maxRows - 1);
-                    extra = static_cast<int>(items.size()) - shown;
-                }
-                const float popH = kPad * 2.0f + (shown + (extra > 0 ? 1 : 0)) * kRow;
-                const float popW = std::min(206.0f, (rect.right - rect.left) - 12.0f);
-                float popX = hot.right + 4.0f;
-                if (popX + popW > rect.right - 6.0f) popX = hot.left - 4.0f - popW;
-                if (popX < rect.left + 6.0f) popX = rect.left + 6.0f;
-                if (popX + popW > rect.right - 6.0f) popX = rect.right - 6.0f - popW;
-                float popY = hot.top - 2.0f;
-                if (popY + popH > rect.bottom - 6.0f) popY = rect.bottom - 6.0f - popH;
-                if (popY < rect.top + 6.0f) popY = rect.top + 6.0f;
-                const D2D1_RECT_F pop = D2D1::RectF(popX, popY, popX + popW, popY + popH);
-
-                D2D1_COLOR_F card = material_.base;
-                card.a = std::max(card.a, 0.94f) * settingsOpacity_;
-                ComPtr<ID2D1SolidColorBrush> cardBrush;
-                if (SUCCEEDED(target_->CreateSolidColorBrush(card, &cardBrush)) && cardBrush) {
-                    target_->FillRoundedRectangle(D2D1::RoundedRect(pop, 8.0f, 8.0f), cardBrush.Get());
-                }
-                ComPtr<ID2D1SolidColorBrush> edgeBrush;
-                if (SUCCEEDED(target_->CreateSolidColorBrush(
-                        WithAlpha(material_.hairline, material_.hairline.a * settingsOpacity_), &edgeBrush)) &&
-                    edgeBrush) {
-                    target_->DrawRoundedRectangle(D2D1::RoundedRect(pop, 8.0f, 8.0f), edgeBrush.Get(), 1.0f);
-                }
-
-                IDWriteTextFormat* rowFmt = smallTextFormat_ ? smallTextFormat_.Get() : agendaMetaFormat_.Get();
-                const float textTop = pop.top + kPad;
-                const float dotX = pop.left + kPad + 3.0f;
-                const float timeX = dotX + 8.0f;
-                const float titleX = timeX + kTimeW;
-                const float titleW = std::max(12.0f, pop.right - kPad - titleX);
-                for (int i = 0; i < shown; ++i) {
-                    const GcalEvent& ev = *items[static_cast<size_t>(i)];
-                    const float y = textTop + i * kRow;
-                    ComPtr<ID2D1SolidColorBrush> dotBrush;
-                    if (SUCCEEDED(target_->CreateSolidColorBrush(GcalRgb(ev.colorRgb, settingsOpacity_), &dotBrush)) &&
-                        dotBrush) {
-                        target_->FillEllipse(D2D1::Ellipse(D2D1::Point2F(dotX, y + kRow * 0.5f), 3.0f, 3.0f),
-                                             dotBrush.Get());
-                    }
-                    di_ics::AgendaInput mark;
-                    mark.allDay = ev.allDay;
-                    mark.startUtc = ev.startUtc;
-                    mark.endUtc = ev.endUtc;
-                    mark.hour = ev.hour;
-                    mark.minute = ev.minute;
-                    const bool due = di_ics::AgendaIsDeadline(mark);
-                    std::wstring when = Loc(L"All day");
-                    if (!ev.allDay) {
-                        SYSTEMTIME st{};
-                        st.wYear = static_cast<WORD>(ev.year);
-                        st.wMonth = static_cast<WORD>(ev.month);
-                        st.wDay = static_cast<WORD>(ev.day);
-                        st.wHour = static_cast<WORD>(ev.hour);
-                        st.wMinute = static_cast<WORD>(ev.minute);
-                        when = FormatIslandTime(st, settings.clockFollowSystem, settings.use24HourClock, false);
-                        if (due) when = std::wstring(Loc(L"Due")) + L" " + when;
-                    }
-                    if (rowFmt) {
-                        ID2D1Brush* whenBrush = mutedBrush_.Get();
-                        ComPtr<ID2D1SolidColorBrush> dueBrush;
-                        if (due && SUCCEEDED(target_->CreateSolidColorBrush(
-                                       GcalRgb(ev.colorRgb, settingsOpacity_), &dueBrush)) &&
-                            dueBrush) {
-                            whenBrush = dueBrush.Get();
-                        } else {
-                            mutedBrush_->SetOpacity(0.80f);
-                        }
-                        DWRITE_TEXT_METRICS tm{};
-                        ComPtr<IDWriteTextLayout> whenLayout = MakeLineLayout(when, rowFmt, kTimeW - 4.0f, &tm, true);
-                        if (whenLayout) {
-                            target_->DrawTextLayout(D2D1::Point2F(timeX, y + 1.0f), whenLayout.Get(), whenBrush);
-                        }
-                        textBrush_->SetOpacity(0.96f);
-                        ComPtr<IDWriteTextLayout> titleLayout =
-                            MakeLineLayout(ev.summary, rowFmt, titleW, &tm, true);
-                        if (titleLayout) {
-                            target_->DrawTextLayout(D2D1::Point2F(titleX, y + 1.0f), titleLayout.Get(),
-                                                    textBrush_.Get());
-                        }
-                    }
-                }
-                if (extra > 0 && rowFmt) {
-                    mutedBrush_->SetOpacity(0.62f);
-                    const std::wstring more = L"+" + std::to_wstring(extra) + L" more";
-                    const float y = textTop + shown * kRow;
-                    target_->DrawTextW(more.c_str(), static_cast<UINT32>(more.size()), rowFmt,
-                                       D2D1::RectF(timeX, y, pop.right - kPad, y + kRow),
-                                       mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                }
-            }
         }
 
         textBrush_->SetOpacity(0.96f);
@@ -24850,6 +25664,40 @@ class Renderer {
     int bitmapCapW_ = 0;      // allocated size of the DIB (>= logical size)
     int bitmapCapH_ = 0;
 
+    // Day-detail side panel. Own layered window, own DC target, so it can sit
+    // outside the island stage. Brushes are rebuilt per present; text formats
+    // are DWrite and stay on the shared factory.
+    HDC panelDc_ = nullptr;
+    HBITMAP panelDib_ = nullptr;
+    HBITMAP panelOld_ = nullptr;
+    int panelBmpW_ = 0;
+    int panelBmpH_ = 0;
+    int panelCapW_ = 0;
+    int panelCapH_ = 0;
+    ComPtr<ID2D1DCRenderTarget> panelTarget_;
+    SpringValue dayW_;
+    SpringValue dayH_;
+    SpringValue dayFade_;
+    bool dayEngaged_ = false;
+    int dayOpen_ = -1;
+    int dayYear_ = 0;
+    int dayMonth_ = 0;
+    int dayKey_ = 0;
+    float dayScroll_ = 0.0f;
+    float dayMaxScroll_ = 0.0f;
+    float dayMix_ = 1.0f;
+    double dayMixStart_ = 0.0;
+    double dayHotSince_ = -1.0;
+    double dayLeaveSince_ = -1.0;
+    bool dayEmpty_ = true;
+    bool dayPrevEmpty_ = true;
+    std::wstring dayHeader_;
+    std::wstring dayBadge_;
+    std::wstring dayPrevHeader_;
+    std::wstring dayPrevBadge_;
+    std::vector<DayPanelItem> dayItems_;
+    std::vector<DayPanelItem> dayPrevItems_;
+
     // Fixed-stage bookkeeping (see Render)
     POINT lastOrigin_ = {0, 0};
     RECT lastBounds_ = {0, 0, 0, 0};
@@ -26460,6 +27308,11 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         }
 
         case WM_DESTROY:
+            if (g_dayPanelHwnd && IsWindow(g_dayPanelHwnd)) {
+                ShowWindow(g_dayPanelHwnd, SW_HIDE);
+            }
+            DwmBackdrop::HidePanel();
+            g_dayPanelHitLive = false;
             RevokeDragDrop(hwnd);
             if (g_oleInitialized) {
                 OleUninitialize();
@@ -27550,6 +28403,7 @@ DWORD WINAPI RenderThreadProc(void*) {
                 // Just hid: drop to zero-CPU parking immediately, no
                 // lingering render/animation work this frame.
                 ShowWindow(hwnd, SW_HIDE);
+                renderer.ParkDayPanel();
                 DwmBackdrop::HideAll();
                 g_audioCaptureNeeded.store(false, std::memory_order_relaxed);
                 wasManuallyHidden = true;
@@ -27771,6 +28625,18 @@ DWORD WINAPI RenderThreadProc(void*) {
                 hoverRect.bottom += padY;
             }
             hover = PtInRect(&hoverRect, cursor) != FALSE;
+            // The day panel sits outside the pill. The pointer has to cross the
+            // gap to reach it; treat the panel and that gap as hover so
+            // expand-on-hover does not collapse on the way across.
+            if (!hover && g_dayPanelHitLive) {
+                if (PtInRect(&g_dayPanelHit, cursor)) {
+                    hover = true;
+                } else if (cursor.y >= pillRect.top && cursor.y < pillRect.bottom &&
+                           cursor.x >= std::min(pillRect.right, g_dayPanelHit.left) &&
+                           cursor.x < std::max(pillRect.left, g_dayPanelHit.right)) {
+                    hover = true;
+                }
+            }
         } else if (g_settings.unhideOnHover) {
             RECT dockRect = GetIslandDockRect();
             hover = PtInRect(&dockRect, cursor) != FALSE;
@@ -28398,11 +29264,17 @@ DWORD WINAPI RenderThreadProc(void*) {
             wasAutoHiddenParked = true;
             g_autoHiddenParked = true;
             ShowWindow(hwnd, SW_HIDE);
+            renderer.ParkDayPanel();
             DwmBackdrop::HideAll();
             g_audioCaptureNeeded.store(false, std::memory_order_relaxed);
             setHighResTimer(false);
             continue;
         }
+
+        const bool monthLive = g_gcalGridValid.load(std::memory_order_relaxed) &&
+            heightSpring.value > MediaLayout::kExpandedMinHeight * std::max(g_settings.sizeScale, 0.01f);
+        const bool dayPanelAnimating = renderer.TickDayPanel(snapshot, pillRect, dt, now, monthLive);
+        if (dayPanelAnimating) needsRender = true;
 
         int targetFps = g_settings.targetFps;
         if (targetFps <= 0) {
@@ -28433,7 +29305,8 @@ DWORD WINAPI RenderThreadProc(void*) {
             std::fabs(nudgeSpring.velocity) > 0.5f ||
             std::fabs(volumeBarSpring.value - volumeBarSpring.target) > 0.5f ||
             std::fabs(volumeBarSpring.velocity) > 0.5f ||
-            g_tabAnimating.load(std::memory_order_relaxed);
+            g_tabAnimating.load(std::memory_order_relaxed) ||
+            dayPanelAnimating;
 
         if (continuousAnimation && !springsAnimating) {
             constexpr double kContinuousFrameMs = 1000.0 / 60.0;

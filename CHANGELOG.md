@@ -4,6 +4,10 @@ All notable changes, enhancements, and bug fixes for **Dynamic Island for Window
 
 ---
 
+## [1.4.0-gcal.4]
+
+Hovering a day in the month grid opens a side panel beside the island, instead of a card drawn inside it. The panel uses the island's theme, corner radius, blur, and spring animation: it grows out of a small pill, resizes as the day's list gets longer or shorter, and collapses when the pointer leaves. The list is the same agenda style as the calendar tab (color bar, time or All day / Due, title, location) and scrolls when the day has more than will fit.
+
 ## [1.4.0-gcal.3]
 
 The agenda type is smaller: 13.25px titles, 12px times, 12px semibold day headers, and tighter rows. Each calendar uses a Google Calendar color — from a COLOR line in the feed, or from `|peacock` / `|#039BE5` after the iCal address. The first calendar defaults to peacock and further calendars walk the palette. That color is the row bar, the month-grid dot, and the tint behind the event happening now. Deadlines still say "Due". Hovering a day in the month grid lists everything on that day.
