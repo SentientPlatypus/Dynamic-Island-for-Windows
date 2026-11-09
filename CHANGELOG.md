@@ -4,6 +4,10 @@ All notable changes, enhancements, and bug fixes for **Dynamic Island for Window
 
 ---
 
+## [1.4.0-gcal.2]
+
+The calendar tab opens as an agenda once an iCal feed has loaded. Events are grouped under Today, Tomorrow, and a date, with the time on the left and the title on the right. Zero-length items and late-night deadlines read as "Due 11:59 PM". The panel grows to 440×300 content pixels on that tab and the list scrolls. The month grid is still there: click the date card, or the Month chip. With no iCal URL, the original month grid is unchanged.
+
 ## [1.4.0-gcal.1]
 
 Fork of 1.4.0 that installs beside the upstream mod (`dynamic-island-for-windows-gcal`). The calendar tab reads one or more private Google Calendar iCal addresses: days with events are dotted, the next few events are listed beside the month, and the collapsed island can show a heads-up such as `CS 4789 in 12 min` shortly before a timed event. No Google sign-in. A failed refresh keeps the last events that loaded.

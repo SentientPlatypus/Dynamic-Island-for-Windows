@@ -2,7 +2,7 @@
 // @id              dynamic-island-for-windows-gcal
 // @name            Dynamic Island for Windows (Google Calendar)
 // @description     A living, breathing pill overlay inspired by iPhone's Dynamic Island, with Google Calendar events from a private iCal link. Reacts to media, downloads, clipboard, battery, and more.
-// @version         1.4.0-gcal.1
+// @version         1.4.0-gcal.2
 // @author          Himanshu
 // @github          https://github.com/SentientPlatypus
 // @include         windhawk.exe
@@ -31,7 +31,7 @@ The Dynamic Island intelligently expands to display context-aware dashboards. Yo
 | **Media Player** | Shows live album art, track details, audio waveforms, and full playback controls. | ![Media](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/media-v2.png) |
 | **Live Lyrics** | Real-time synchronized lyrics with inline collapsed view and full lyrics tab. | ![Live Lyrics](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/main/previews/lyrics.png) |
 | **Blur & Acrylic** | Genuine Windows DWM blur and acrylic backdrop effects for modern depth. | ![Blur & Acrylic](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/main/previews/blur-acrylic.png) |
-| **Calendar** | A monthly grid that always fits its rows, with today marked in the accent colour. A private Google Calendar iCal link adds event dots and the next few upcoming events. | ![Calendar](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/calendar.png) |
+| **Calendar** | A monthly grid that always fits its rows, with today marked in the accent colour. A private Google Calendar iCal link opens an agenda of the next few days, grouped by day, with the month grid one click away. | ![Calendar](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/calendar.png) |
 | **Weather** | Real-time weather stats powered by wttr.in, including wind speed, humidity, and "feels like" temperature. | ![Weather](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/weather-v2.png) |
 | **Hardware Monitor** | CPU, RAM, GPU, disk and live network throughput, with load bars that turn amber past 75% and red past 90%. | ![Hardware Monitor](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/hardware-monitor.png) |
 | **Game Overlay** | Real-time FPS, CPU, GPU, RAM and disk, sized to whichever metrics you enable. | ![Gamebar](https://raw.githubusercontent.com/devcode90/Dynamic-Island-for-Windows/793cf954d51aa9748c39d544187fab6e25ecd0fb/previews/gamebar-v2.png) |
@@ -99,7 +99,7 @@ The calendar tab can show events from your Google Calendar without signing in. T
 3. Choose **Settings and sharing**.
 4. Scroll to **Integrate calendar** and copy **Secret address in iCal format**. It looks like `https://calendar.google.com/calendar/ical/.../basic.ics`.
 5. In Windhawk, open this mod's settings and paste that address into **Google Calendar → iCal URLs**. More than one calendar is fine: separate the addresses with commas or put each one on its own line.
-6. Days with events get a small dot in the accent colour, and the next few events are listed beside the month. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
+6. The calendar tab opens as an agenda: days grouped under **Today**, **Tomorrow**, and a date, with the time on the left and the title on the right. Deadlines (zero-length, or around 11:59 PM) read as **Due 11:59 PM**. Scroll the list when it is longer than the panel. Click the month header, or the **Month** chip, to get the month grid back. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
 
 The secret address is a private link: anyone who has it can read that calendar, so treat it like a password. The feed is refreshed in the background (every 15 minutes by default). If the PC is offline, the island keeps the last events it successfully loaded.
 
@@ -117,7 +117,7 @@ The secret address is a private link: anyone who has it can read that calendar, 
 
 ### Credits
 - **[Himanshu (devcode90) @GitHub](https://github.com/devcode90)**: Original author of Dynamic Island for Windows.
-- **[Geneustace Wicaksono (SentientPlatypus) @GitHub](https://github.com/SentientPlatypus)**: Google Calendar fork. Events from a private iCal address on the calendar tab, and an upcoming-event heads-up on the collapsed island.
+- **[Geneustace Wicaksono (SentientPlatypus) @GitHub](https://github.com/SentientPlatypus)**: Google Calendar fork. An agenda of the next few days from a private iCal address, with the month grid one click away, and an upcoming-event heads-up on the collapsed island.
 - **[Sarthak Singh (sarthakaksh) @GitHub](https://github.com/sarthakaksh)**: Major feature overhaul including smoothing animations, right-click focus timer, strip mode, lyrics for songs, song recognition (Shazam) , quick lookup, Cross-Source Media Switching, hover clock, robust media controls, zero-CPU instant hide shortcut, Bluetooth battery integration, image clipboard thumbnails, and full-screen autohide fixes.
 - **[ciizerr @GitHub](https://github.com/ciizerr)**: Improved the UI by refining layout alignment, fixing dashboard scaling, and enhancing calendar and weather module integration.
 - **[ChrisSch-dev @GitHub](https://github.com/ChrisSch-dev)**: Added album title support, word wrapping for weather descriptions, sleep resume fixes, and various performance/movement stability improvements.
@@ -599,6 +599,15 @@ We love community contributions! To ensure high-quality updates, please follow t
   - HeadsUpMinutes: 10
     $name: Heads-up window (minutes)
     $description: Show the collapsed heads-up when an event starts within this many minutes. 10 by default.
+  - AgendaDays: 7
+    $name: Agenda days
+    $description: How many days the agenda lists, including today. Days with nothing are skipped, except today. 7 by default.
+  - DefaultView: agenda
+    $name: Calendar default view
+    $description: What the calendar tab opens to once an iCal feed has loaded. With no iCal URL, the month grid is always shown.
+    $options:
+      - agenda: Agenda
+      - month: Month
   $name: Google Calendar
 - Shortcuts:
   - HideShowHotkeyEnabled: true
@@ -2022,6 +2031,192 @@ inline std::string HeadsUpLabel(const std::vector<Occurrence>& events, int64_t n
     return title + " in " + std::to_string(mins) + " min";
 }
 
+// Agenda list metrics, in content pixels. DrawPill multiplies the whole island
+// by sizeScale (which already includes DPI), and text formats multiply by the
+// separate Text size setting. These numbers are the 1x design.
+struct AgendaMetrics {
+    static constexpr float kPanelW = 440.0f;
+    static constexpr float kPanelH = 300.0f;
+    static constexpr float kPadX = 18.0f;
+    static constexpr float kHeaderTop = 10.0f;
+    static constexpr float kHeaderH = 28.0f;
+    static constexpr float kListTop = 48.0f;
+    static constexpr float kListBottom = 14.0f;
+    static constexpr float kDayHeaderH = 24.0f;
+    static constexpr float kDayGap = 10.0f;
+    static constexpr float kRowH = 36.0f;
+    static constexpr float kRowHLoc = 50.0f;
+    static constexpr float kRowGap = 4.0f;
+    static constexpr float kTimeColW = 122.0f;
+    static constexpr float kFade = 18.0f;
+    static constexpr float kDotReserve = 18.0f;
+    static constexpr float kTitlePx = 16.5f;
+    static constexpr float kTimePx = 15.0f;
+    static constexpr float kMetaPx = 12.0f;
+    static constexpr float kDayPx = 13.5f;
+    static constexpr float kToggleW = 68.0f;
+    static constexpr float kToggleH = 22.0f;
+};
+
+enum class AgendaRole { Timed, AllDay, Deadline, Empty };
+
+struct AgendaInput {
+    bool allDay = false;
+    bool hasLocation = false;
+    int64_t startUtc = 0;
+    int64_t endUtc = 0;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int hour = 0;
+    int minute = 0;
+    int spanYear = 0;
+    int spanMonth = 0;
+    int spanDay = 0;
+    int spanEndYear = 0;
+    int spanEndMonth = 0;
+    int spanEndDay = 0;
+};
+
+struct AgendaLine {
+    int eventIndex = -1;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int dayOffset = 0;  // 0 = today, 1 = tomorrow
+    AgendaRole role = AgendaRole::Timed;
+    bool past = false;
+    bool happening = false;
+    bool dayHeader = false;
+    float y = 0.0f;
+    float h = 0.0f;
+};
+
+struct AgendaLayout {
+    std::vector<AgendaLine> lines;
+    float contentHeight = 0.0f;
+};
+
+inline bool AgendaDateInSpan(const AgendaInput& ev, int y, int m, int d) {
+    const int cur = PackDate(y, m, d);
+    const int start = PackDate(ev.spanYear, ev.spanMonth, ev.spanDay);
+    const int end = PackDate(ev.spanEndYear, ev.spanEndMonth, ev.spanEndDay);
+    return cur >= start && cur < end;
+}
+
+// Zero-length items, and anything that starts at 23:50 or later, are deadlines
+// ("Due 11:59 PM") rather than meetings.
+inline bool AgendaIsDeadline(const AgendaInput& ev) {
+    if (ev.allDay) return false;
+    if (ev.endUtc - ev.startUtc <= 60) return true;
+    return ev.hour == 23 && ev.minute >= 50;
+}
+
+inline AgendaLayout BuildAgenda(const std::vector<AgendaInput>& events, int64_t nowUtc, int dayCount) {
+    AgendaLayout layout;
+    if (dayCount < 1) dayCount = 1;
+    if (dayCount > 31) dayCount = 31;
+    const Civil today = UnixUtcToLocal(nowUtc);
+
+    for (int offset = 0; offset < dayCount; ++offset) {
+        const Civil date = AddDays(Civil{today.year, today.month, today.day, 0, 0, 0}, offset);
+        struct Row {
+            int index;
+            AgendaRole role;
+            bool past;
+            bool happening;
+            int hour;
+            int minute;
+            int64_t startUtc;
+            bool hasLocation;
+        };
+        std::vector<Row> rows;
+        for (int i = 0; i < static_cast<int>(events.size()); ++i) {
+            const AgendaInput& ev = events[static_cast<size_t>(i)];
+            const bool onDay = ev.allDay ? AgendaDateInSpan(ev, date.year, date.month, date.day)
+                                         : (ev.year == date.year && ev.month == date.month && ev.day == date.day);
+            if (!onDay) continue;
+            Row row;
+            row.index = i;
+            row.hour = ev.hour;
+            row.minute = ev.minute;
+            row.startUtc = ev.startUtc;
+            row.hasLocation = ev.hasLocation;
+            row.happening = false;
+            row.past = false;
+            if (ev.allDay) {
+                row.role = AgendaRole::AllDay;
+            } else if (AgendaIsDeadline(ev)) {
+                row.role = AgendaRole::Deadline;
+                row.past = nowUtc >= ev.startUtc;
+            } else {
+                row.role = AgendaRole::Timed;
+                if (ev.endUtc > ev.startUtc && ev.startUtc <= nowUtc && nowUtc < ev.endUtc) {
+                    row.happening = true;
+                } else if (ev.endUtc <= nowUtc) {
+                    row.past = true;
+                }
+            }
+            rows.push_back(row);
+        }
+        if (rows.empty() && offset != 0) continue;
+
+        std::sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) {
+            const int aAll = a.role == AgendaRole::AllDay ? 0 : 1;
+            const int bAll = b.role == AgendaRole::AllDay ? 0 : 1;
+            if (aAll != bAll) return aAll < bAll;
+            if (a.hour != b.hour) return a.hour < b.hour;
+            if (a.minute != b.minute) return a.minute < b.minute;
+            if (a.startUtc != b.startUtc) return a.startUtc < b.startUtc;
+            return a.index < b.index;
+        });
+
+        if (!layout.lines.empty()) {
+            layout.contentHeight += AgendaMetrics::kDayGap;
+        }
+        AgendaLine header;
+        header.year = date.year;
+        header.month = date.month;
+        header.day = date.day;
+        header.dayOffset = offset;
+        header.dayHeader = true;
+        header.y = layout.contentHeight;
+        header.h = AgendaMetrics::kDayHeaderH;
+        layout.lines.push_back(header);
+        layout.contentHeight += header.h;
+
+        if (rows.empty()) {
+            AgendaLine empty;
+            empty.year = date.year;
+            empty.month = date.month;
+            empty.day = date.day;
+            empty.dayOffset = offset;
+            empty.role = AgendaRole::Empty;
+            empty.y = layout.contentHeight;
+            empty.h = AgendaMetrics::kRowH;
+            layout.lines.push_back(empty);
+            layout.contentHeight += empty.h + AgendaMetrics::kRowGap;
+            continue;
+        }
+        for (const Row& row : rows) {
+            AgendaLine line;
+            line.eventIndex = row.index;
+            line.year = date.year;
+            line.month = date.month;
+            line.day = date.day;
+            line.dayOffset = offset;
+            line.role = row.role;
+            line.past = row.past;
+            line.happening = row.happening;
+            line.y = layout.contentHeight;
+            line.h = row.hasLocation ? AgendaMetrics::kRowHLoc : AgendaMetrics::kRowH;
+            layout.lines.push_back(line);
+            layout.contentHeight += line.h + AgendaMetrics::kRowGap;
+        }
+    }
+    return layout;
+}
+
 }  // namespace di_ics
 // DI_ICS_ENGINE_END
 
@@ -2610,6 +2805,8 @@ struct Settings {
     int gcalRefreshMinutes = 15;
     bool gcalHeadsUp = true;
     int gcalHeadsUpMinutes = 10;
+    int gcalAgendaDays = 7;
+    bool gcalDefaultMonth = false;
     bool lyrics = false;
     bool lyricsVisualizer = true;
     bool karaokeLyrics = true;
@@ -3152,6 +3349,18 @@ HANDLE g_audioThread = nullptr;
 HANDLE g_weatherThread = nullptr;
 HANDLE g_gcalThread = nullptr;
 HANDLE g_gcalWakeEvent = nullptr;
+// Session override of GoogleCalendar.DefaultView. LoadSettings resets it only
+// when that setting itself changes, so a click on Month / Agenda survives a
+// refresh-interval edit.
+std::atomic<bool> g_gcalShowMonth{false};
+std::atomic<bool> g_gcalAgendaOn{false};
+std::atomic<float> g_gcalScroll{0.0f};
+std::atomic<float> g_gcalMaxScroll{0.0f};
+std::atomic<float> g_gcalToggleL{0.0f};
+std::atomic<float> g_gcalToggleT{0.0f};
+std::atomic<float> g_gcalToggleR{0.0f};
+std::atomic<float> g_gcalToggleB{0.0f};
+std::atomic<bool> g_gcalToggleValid{false};
 HANDLE g_lyricsThread = nullptr;
 HANDLE g_notificationThread = nullptr;
 HANDLE g_bluetoothThread = nullptr;
@@ -3424,6 +3633,55 @@ int HardwareMonitorTabIndex(const Settings& settings) {
         return -1;
     }
     return 2 + (settings.weather ? 1 : 0) + MediaTabIndex(settings);
+}
+
+int CalendarTabIndex(const Settings& settings, bool mediaSurface) {
+    // Idle: time, calendar, ...  Media: [lyrics,] media, calendar, ...
+    return mediaSurface ? 1 + MediaTabIndex(settings) : 1;
+}
+
+bool GcalAgendaSelected(const Settings& settings, const GcalSnapshot* snap) {
+    return snap && snap->loaded && !settings.gcalIcsUrls.empty() &&
+           !g_gcalShowMonth.load(std::memory_order_relaxed);
+}
+
+void GcalToggleView() {
+    g_gcalShowMonth.store(!g_gcalShowMonth.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    g_gcalScroll.store(0.0f, std::memory_order_relaxed);
+    g_layoutDirty = true;
+}
+
+// Pixel scroll. Returns false at the edge so a fresh wheel gesture can change tabs.
+bool GcalScrollBy(float deltaPx) {
+    const float maxScroll = std::max(0.0f, g_gcalMaxScroll.load(std::memory_order_relaxed));
+    const float current = g_gcalScroll.load(std::memory_order_relaxed);
+    float next = current + deltaPx;
+    if (next < 0.0f) next = 0.0f;
+    if (next > maxScroll) next = maxScroll;
+    if (next == current) return false;
+    g_gcalScroll.store(next, std::memory_order_relaxed);
+    g_layoutDirty = true;
+    return true;
+}
+
+bool GcalToggleHitTest(const MediaContentPoint& pt) {
+    if (!pt.valid || !g_gcalToggleValid.load(std::memory_order_relaxed)) return false;
+    if (pt.height <= MediaLayout::kExpandedMinHeight) return false;
+    const float l = g_gcalToggleL.load(std::memory_order_relaxed);
+    const float t = g_gcalToggleT.load(std::memory_order_relaxed);
+    const float r = g_gcalToggleR.load(std::memory_order_relaxed);
+    const float b = g_gcalToggleB.load(std::memory_order_relaxed);
+    return pt.x >= l && pt.x <= r && pt.y >= t && pt.y <= b;
+}
+
+bool GcalListHitTest(const MediaContentPoint& pt) {
+    if (!pt.valid || !g_gcalAgendaOn.load(std::memory_order_relaxed)) return false;
+    if (pt.height <= MediaLayout::kExpandedMinHeight) return false;
+    if (g_gcalMaxScroll.load(std::memory_order_relaxed) <= 0.5f) return false;
+    return pt.x >= di_ics::AgendaMetrics::kPadX &&
+           pt.x <= pt.width - di_ics::AgendaMetrics::kDotReserve &&
+           pt.y >= di_ics::AgendaMetrics::kListTop &&
+           pt.y <= pt.height - di_ics::AgendaMetrics::kListBottom;
 }
 
 int FileTrayTabIndex(const Settings& settings) {
@@ -4752,6 +5010,11 @@ void LoadSettings() {
         if (lead <= 0) lead = 10;
         next.gcalHeadsUpMinutes = ClampInt(lead, 1, 180);
         next.gcalHeadsUp = Wh_GetIntSetting(L"GoogleCalendar.HeadsUp") != 0;
+        int days = Wh_GetIntSetting(L"GoogleCalendar.AgendaDays");
+        if (days <= 0) days = 7;
+        next.gcalAgendaDays = ClampInt(days, 1, 30);
+        const std::wstring view = GetStringSettingCopy(L"GoogleCalendar.DefaultView");
+        next.gcalDefaultMonth = _wcsicmp(view.c_str(), L"month") == 0;
     }
     next.lyrics = Wh_GetIntSetting(L"Modules.Lyrics") != 0;
     next.lyricsVisualizer = Wh_GetIntSetting(L"Modules.LyricsVisualizer") != 0;
@@ -5046,6 +5309,9 @@ void LoadSettings() {
         cityChanged = next.weatherCity != g_settings.weatherCity;
         gcalChanged = next.gcalIcsUrls != g_settings.gcalIcsUrls ||
                       next.gcalRefreshMinutes != g_settings.gcalRefreshMinutes;
+        if (next.gcalDefaultMonth != g_settings.gcalDefaultMonth) {
+            g_gcalShowMonth.store(next.gcalDefaultMonth, std::memory_order_relaxed);
+        }
         capsLockChanged = next.capsLock != g_settings.capsLock;
         hotkeySettingChanged =
             next.hideShowHotkeyEnabled != g_settings.hideShowHotkeyEnabled ||
@@ -8735,26 +9001,6 @@ bool GcalCoversDay(const GcalSnapshot* snap, int year, int month, int day) {
         if (cur >= start && cur < end) return true;
     }
     return false;
-}
-
-void GcalUpcoming(const GcalSnapshot& snap, int limit, std::vector<const GcalEvent*>& out) {
-    out.clear();
-    if (limit < 1) return;
-    const int64_t now = di_ics::UnixNow();
-    const di_ics::Civil today = di_ics::UnixUtcToLocal(now);
-    const di_ics::Civil horizon = di_ics::AddDays(di_ics::Civil{today.year, today.month, today.day, 0, 0, 0}, 21);
-    const int todayPack = today.year * 10000 + today.month * 100 + today.day;
-    for (const GcalEvent& ev : snap.events) {
-        if (ev.allDay) {
-            const int endPack = ev.spanEndYear * 10000 + ev.spanEndMonth * 100 + ev.spanEndDay;
-            if (endPack <= todayPack) continue;
-            if (horizon < di_ics::Civil{ev.spanYear, ev.spanMonth, ev.spanDay, 0, 0, 0}) continue;
-        } else if (ev.endUtc <= now || ev.startUtc > now + 21LL * 86400LL) {
-            continue;
-        }
-        out.push_back(&ev);
-        if (static_cast<int>(out.size()) >= limit) break;
-    }
 }
 
 // Same rule as di_ics::HeadsUpLabel, applied to the already-decoded snapshot so
@@ -14903,6 +15149,10 @@ class Renderer {
         idleTextFormat_.Reset();
         calDayLargeFormat_.Reset();
         calGridFormat_.Reset();
+        agendaTitleFormat_.Reset();
+        agendaTimeFormat_.Reset();
+        agendaMetaFormat_.Reset();
+        agendaDayFormat_.Reset();
         dwriteFactory_.Reset();
         skipTriFull_.Reset();
         skipTriNotch_.Reset();
@@ -15213,6 +15463,10 @@ class Renderer {
         idleTextFormat_ = nullptr;
         calDayLargeFormat_ = nullptr;
         calGridFormat_ = nullptr;
+        agendaTitleFormat_ = nullptr;
+        agendaTimeFormat_ = nullptr;
+        agendaMetaFormat_ = nullptr;
+        agendaDayFormat_ = nullptr;
         timeDashboardFormat_ = nullptr;
         dateDashboardFormat_ = nullptr;
 
@@ -15269,6 +15523,18 @@ class Renderer {
         createFormat(mainFamily, defaultDisplay,
                      DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL,
                      DWRITE_FONT_STRETCH_NORMAL, 16.0f * ts, dateDashboardFormat_);
+        createFormat(mainFamily, defaultDisplay,
+                     DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL,
+                     DWRITE_FONT_STRETCH_NORMAL, di_ics::AgendaMetrics::kTitlePx * ts, agendaTitleFormat_);
+        createFormat(mainFamily, defaultDisplay,
+                     DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL,
+                     DWRITE_FONT_STRETCH_NORMAL, di_ics::AgendaMetrics::kTimePx * ts, agendaTimeFormat_);
+        createFormat(smallFamily, defaultSmall,
+                     DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL,
+                     DWRITE_FONT_STRETCH_NORMAL, di_ics::AgendaMetrics::kMetaPx * ts, agendaMetaFormat_);
+        createFormat(mainFamily, defaultDisplay,
+                     DWRITE_FONT_WEIGHT_BOLD, DWRITE_FONT_STYLE_NORMAL,
+                     DWRITE_FONT_STRETCH_NORMAL, di_ics::AgendaMetrics::kDayPx * ts, agendaDayFormat_);
 
         usingFluentIcons_ = false;
         ComPtr<IDWriteFontCollection> sysFonts;
@@ -15364,6 +15630,16 @@ class Renderer {
             dateDashboardFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
             dateDashboardFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
         }
+        auto alignLeading = [](IDWriteTextFormat* fmt) {
+            if (!fmt) return;
+            fmt->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+            fmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            fmt->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        };
+        alignLeading(agendaTitleFormat_.Get());
+        alignLeading(agendaTimeFormat_.Get());
+        alignLeading(agendaMetaFormat_.Get());
+        alignLeading(agendaDayFormat_.Get());
         if (iconFormat_) {
             iconFormat_->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
         }
@@ -16191,123 +16467,277 @@ class Renderer {
 
 
 
-    // Compact date plus the next few events, used once a calendar feed has loaded.
-    // The month grid is drawn by the caller, to the right of this card.
-    void DrawCalendarAgenda(const GcalSnapshot& gcal, D2D1_RECT_F rect, const Settings& settings,
-                            float scale, const SYSTEMTIME& local, ID2D1SolidColorBrush* accent) {
-        const D2D1_RECT_F card = D2D1::RectF(rect.left + 14.0f * scale, rect.top + 14.0f * scale,
-                                             rect.left + 168.0f * scale, rect.bottom - 16.0f * scale);
-        DrawCard(card, 12.0f * scale);
+    // Full-panel agenda. Content pixels; DrawPill scales the island by sizeScale.
+    void DrawCalendarAgendaList(const GcalSnapshot& gcal, D2D1_RECT_F rect, const Settings& settings,
+                                const SYSTEMTIME& local, ID2D1SolidColorBrush* accent) {
+        (void)local;
+        using M = di_ics::AgendaMetrics;
+        const float width = rect.right - rect.left;
+        const float height = rect.bottom - rect.top;
 
-        const float pad = 8.0f * scale;
-        const D2D1_RECT_F header = D2D1::RectF(card.left + pad, card.top + 2.0f * scale,
-                                               card.right - pad, card.top + 54.0f * scale);
-        const D2D1_RECT_F dayRect = D2D1::RectF(header.right - 52.0f * scale, header.top,
-                                                header.right, header.bottom);
+        std::vector<di_ics::AgendaInput> inputs;
+        inputs.reserve(gcal.events.size());
+        for (const GcalEvent& ev : gcal.events) {
+            di_ics::AgendaInput in;
+            in.allDay = ev.allDay;
+            in.hasLocation = !ev.location.empty();
+            in.startUtc = ev.startUtc;
+            in.endUtc = ev.endUtc;
+            in.year = ev.year;
+            in.month = ev.month;
+            in.day = ev.day;
+            in.hour = ev.hour;
+            in.minute = ev.minute;
+            in.spanYear = ev.spanYear;
+            in.spanMonth = ev.spanMonth;
+            in.spanDay = ev.spanDay;
+            in.spanEndYear = ev.spanEndYear;
+            in.spanEndMonth = ev.spanEndMonth;
+            in.spanEndDay = ev.spanEndDay;
+            inputs.push_back(in);
+        }
+        const di_ics::AgendaLayout layout =
+            di_ics::BuildAgenda(inputs, di_ics::UnixNow(), settings.gcalAgendaDays);
 
-        if (boldTextFormat_ && accent) {
-            boldTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            boldTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+        const float viewport = std::max(1.0f, height - M::kListTop - M::kListBottom);
+        const float maxScroll = std::max(0.0f, layout.contentHeight - viewport);
+        float scroll = g_gcalScroll.load(std::memory_order_relaxed);
+        if (scroll < 0.0f) scroll = 0.0f;
+        if (scroll > maxScroll) scroll = maxScroll;
+        g_gcalScroll.store(scroll, std::memory_order_relaxed);
+        g_gcalMaxScroll.store(maxScroll, std::memory_order_relaxed);
+        g_gcalAgendaOn.store(true, std::memory_order_relaxed);
+        g_gcalToggleL.store(0.0f, std::memory_order_relaxed);
+        g_gcalToggleT.store(0.0f, std::memory_order_relaxed);
+        g_gcalToggleR.store(std::max(0.0f, width - M::kDotReserve), std::memory_order_relaxed);
+        g_gcalToggleB.store(M::kListTop, std::memory_order_relaxed);
+        g_gcalToggleValid.store(true, std::memory_order_relaxed);
+
+        IDWriteTextFormat* titleFmt = agendaTitleFormat_ ? agendaTitleFormat_.Get() : textFormat_.Get();
+        IDWriteTextFormat* timeFmt = agendaTimeFormat_ ? agendaTimeFormat_.Get() : textFormat_.Get();
+        IDWriteTextFormat* metaFmt = agendaMetaFormat_ ? agendaMetaFormat_.Get() : smallTextFormat_.Get();
+        IDWriteTextFormat* dayFmt = agendaDayFormat_ ? agendaDayFormat_.Get() : boldTextFormat_.Get();
+
+        const float chipR = width - M::kDotReserve - 2.0f;
+        const float chipL = chipR - M::kToggleW;
+        const float chipT = M::kHeaderTop + (M::kHeaderH - M::kToggleH) * 0.5f;
+        const D2D1_RECT_F chip = D2D1::RectF(rect.left + chipL, rect.top + chipT,
+                                             rect.left + chipR, rect.top + chipT + M::kToggleH);
+        if (raisedBrush_) {
+            target_->FillRoundedRectangle(
+                D2D1::RoundedRect(chip, M::kToggleH * 0.5f, M::kToggleH * 0.5f), raisedBrush_.Get());
+        }
+        if (metaFmt && accent) {
+            metaFmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            const std::wstring chipLabel = Loc(L"Month");
+            target_->DrawTextW(chipLabel.c_str(), static_cast<UINT32>(chipLabel.size()), metaFmt,
+                               chip, accent, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            metaFmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+        }
+        if (titleFmt) {
+            textBrush_->SetOpacity(0.96f);
             target_->DrawTextW(calendarCachedMonthName_.c_str(),
-                               static_cast<UINT32>(calendarCachedMonthName_.size()),
-                               boldTextFormat_.Get(),
-                               D2D1::RectF(header.left, header.top, dayRect.left - 4.0f * scale,
-                                           header.top + 22.0f * scale),
-                               accent, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-            boldTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-            boldTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+                               static_cast<UINT32>(calendarCachedMonthName_.size()), titleFmt,
+                               D2D1::RectF(rect.left + M::kPadX, rect.top + M::kHeaderTop,
+                                           rect.left + chipL - 8.0f, rect.top + M::kHeaderTop + M::kHeaderH),
+                               textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
-        mutedBrush_->SetOpacity(0.70f);
-        if (smallTextFormat_) {
-            smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-            target_->DrawTextW(calendarCachedWeekdayName_.c_str(),
-                               static_cast<UINT32>(calendarCachedWeekdayName_.size()),
-                               smallTextFormat_.Get(),
-                               D2D1::RectF(header.left, header.top + 20.0f * scale, dayRect.left - 4.0f * scale,
-                                           header.bottom),
-                               mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-            smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-            smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
-        }
-
-        wchar_t dayStr[16] = {};
-        swprintf_s(dayStr, L"%d", local.wDay);
-        textBrush_->SetOpacity(0.97f);
-        target_->DrawTextW(dayStr, static_cast<UINT32>(wcslen(dayStr)),
-                           hugeTextFormat_ ? hugeTextFormat_.Get() : boldTextFormat_.Get(),
-                           dayRect, textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
 
         ComPtr<ID2D1SolidColorBrush> hrBrush;
         if (SUCCEEDED(target_->CreateSolidColorBrush(
                 WithAlpha(material_.hairline, material_.hairline.a * settingsOpacity_), &hrBrush)) && hrBrush) {
-            const float y = header.bottom + 1.0f * scale;
-            target_->DrawLine(D2D1::Point2F(card.left + pad, y), D2D1::Point2F(card.right - pad, y),
-                              hrBrush.Get(), 1.0f * scale);
+            const float y = rect.top + M::kListTop - 6.0f;
+            target_->DrawLine(D2D1::Point2F(rect.left + M::kPadX, y),
+                              D2D1::Point2F(rect.right - M::kDotReserve, y), hrBrush.Get(), 1.0f);
         }
 
-        std::vector<const GcalEvent*> upcoming;
-        GcalUpcoming(gcal, 3, upcoming);
+        const D2D1_RECT_F list = D2D1::RectF(rect.left, rect.top + M::kListTop,
+                                             rect.right - M::kDotReserve * 0.5f,
+                                             rect.bottom - M::kListBottom);
+        target_->PushAxisAlignedClip(list, D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 
-        const float listTop = header.bottom + 6.0f * scale;
-        const float listBottom = card.bottom - 6.0f * scale;
-        const float rowH = (listBottom - listTop) / 3.0f;
-        if (upcoming.empty()) {
-            mutedBrush_->SetOpacity(0.55f);
-            if (smallTextFormat_) {
-                smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-                smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-                const wchar_t* quiet = L"Nothing coming up";
-                target_->DrawTextW(quiet, static_cast<UINT32>(wcslen(quiet)), smallTextFormat_.Get(),
-                                   D2D1::RectF(card.left + pad, listTop, card.right - pad, listBottom),
-                                   mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+        auto dayLabel = [](const di_ics::AgendaLine& line) -> std::wstring {
+            if (line.dayOffset == 0) return Loc(L"Today");
+            if (line.dayOffset == 1) return Loc(L"Tomorrow");
+            SYSTEMTIME st{};
+            st.wYear = static_cast<WORD>(line.year);
+            st.wMonth = static_cast<WORD>(line.month);
+            st.wDay = static_cast<WORD>(line.day);
+            wchar_t buf[64] = {};
+            if (GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, 0, &st, L"ddd, MMM d", buf,
+                                ARRAYSIZE(buf), nullptr) > 0) {
+                return std::wstring(buf);
             }
-        } else if (accent) {
-            for (size_t i = 0; i < upcoming.size(); ++i) {
-                const GcalEvent* ev = upcoming[i];
-                const float top = listTop + static_cast<float>(i) * rowH;
-                const D2D1_RECT_F row = D2D1::RectF(card.left + pad, top, card.right - pad, top + rowH);
-                std::wstring when;
-                if (ev->allDay) {
-                    when = L"All day";
+            return std::wstring(L"");
+        };
+
+        const float timeLeft = rect.left + M::kPadX;
+        const float titleLeft = timeLeft + M::kTimeColW + 8.0f;
+        const float titleRight = rect.right - M::kDotReserve - 4.0f;
+
+        for (const di_ics::AgendaLine& line : layout.lines) {
+            const float top = rect.top + M::kListTop + line.y - scroll;
+            if (top + line.h < list.top - 8.0f || top > list.bottom + 8.0f) continue;
+            if (line.dayHeader) {
+                const std::wstring label = dayLabel(line);
+                ID2D1Brush* brush = textBrush_.Get();
+                if (line.dayOffset == 0 && accent) {
+                    brush = accent;
+                } else if (line.dayOffset != 1) {
+                    mutedBrush_->SetOpacity(0.72f);
+                    brush = mutedBrush_.Get();
                 } else {
-                    SYSTEMTIME st{};
-                    st.wYear = static_cast<WORD>(ev->year);
-                    st.wMonth = static_cast<WORD>(ev->month);
-                    st.wDay = static_cast<WORD>(ev->day);
-                    st.wHour = static_cast<WORD>(ev->hour);
-                    st.wMinute = static_cast<WORD>(ev->minute);
-                    when = FormatIslandTime(st, settings.clockFollowSystem, settings.use24HourClock, false);
+                    textBrush_->SetOpacity(0.94f);
                 }
-                const float timeW = 58.0f * scale;
-                if (smallTextFormat_) {
-                    smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-                    smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-                    target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), smallTextFormat_.Get(),
-                                       D2D1::RectF(row.left, row.top, row.left + timeW, row.bottom),
-                                       accent, D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                    smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                if (dayFmt) {
+                    target_->DrawTextW(label.c_str(), static_cast<UINT32>(label.size()), dayFmt,
+                                       D2D1::RectF(timeLeft, top, titleRight, top + line.h),
+                                       brush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 }
-                std::wstring title = ev->summary;
-                if (!ev->location.empty()) {
-                    title += L"  ·  ";
-                    title += ev->location;
+                continue;
+            }
+
+            if (line.role == di_ics::AgendaRole::Empty) {
+                mutedBrush_->SetOpacity(0.48f);
+                const std::wstring quiet = Loc(L"Nothing scheduled");
+                if (metaFmt) {
+                    target_->DrawTextW(quiet.c_str(), static_cast<UINT32>(quiet.size()), metaFmt,
+                                       D2D1::RectF(timeLeft, top, titleRight, top + line.h),
+                                       mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 }
-                textBrush_->SetOpacity(0.92f);
-                if (textFormat_) {
-                    textFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-                    target_->DrawTextW(title.c_str(), static_cast<UINT32>(title.size()), textFormat_.Get(),
-                                       D2D1::RectF(row.left + timeW, row.top, row.right, row.bottom),
-                                       textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
-                    textFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+                continue;
+            }
+
+            if (line.eventIndex < 0 || line.eventIndex >= static_cast<int>(gcal.events.size())) continue;
+            const GcalEvent& ev = gcal.events[static_cast<size_t>(line.eventIndex)];
+            const float fade = line.past ? 0.38f : 1.0f;
+
+            if (line.happening && accent) {
+                D2D1_COLOR_F wash = material_.accentSoft;
+                wash.a *= fade * settingsOpacity_;
+                ComPtr<ID2D1SolidColorBrush> washBrush;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(wash, &washBrush)) && washBrush) {
+                    target_->FillRoundedRectangle(
+                        D2D1::RoundedRect(D2D1::RectF(rect.left + 8.0f, top + 1.0f, titleRight, top + line.h - 1.0f),
+                                          8.0f, 8.0f),
+                        washBrush.Get());
                 }
             }
+
+            std::wstring when;
+            if (line.role == di_ics::AgendaRole::AllDay) {
+                when = Loc(L"All day");
+            } else {
+                SYSTEMTIME st{};
+                st.wYear = static_cast<WORD>(ev.year);
+                st.wMonth = static_cast<WORD>(ev.month);
+                st.wDay = static_cast<WORD>(ev.day);
+                st.wHour = static_cast<WORD>(ev.hour);
+                st.wMinute = static_cast<WORD>(ev.minute);
+                when = FormatIslandTime(st, settings.clockFollowSystem, settings.use24HourClock, false);
+                if (line.role == di_ics::AgendaRole::Deadline) {
+                    when = std::wstring(Loc(L"Due")) + L" " + when;
+                }
+            }
+
+            const bool accentTime = line.role == di_ics::AgendaRole::Deadline || line.happening;
+            const float titleBand = ev.location.empty() ? line.h : 22.0f;
+            const float timeBottom = top + titleBand;
+            if (line.role == di_ics::AgendaRole::Deadline && accent) {
+                D2D1_COLOR_F bar = material_.accent;
+                bar.a *= fade * settingsOpacity_;
+                ComPtr<ID2D1SolidColorBrush> barBrush;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(bar, &barBrush)) && barBrush) {
+                    const float barH = 14.0f;
+                    const float barTop = top + (titleBand - barH) * 0.5f;
+                    target_->FillRoundedRectangle(
+                        D2D1::RoundedRect(D2D1::RectF(timeLeft, barTop, timeLeft + 3.0f, barTop + barH), 1.5f, 1.5f),
+                        barBrush.Get());
+                }
+            }
+
+            ID2D1Brush* timeBrush = textBrush_.Get();
+            if (accentTime && accent) {
+                D2D1_COLOR_F c = material_.accent;
+                c.a *= fade * settingsOpacity_;
+                ComPtr<ID2D1SolidColorBrush> timeColor;
+                if (SUCCEEDED(target_->CreateSolidColorBrush(c, &timeColor)) && timeColor && timeFmt) {
+                    const float inset = line.role == di_ics::AgendaRole::Deadline ? 8.0f : 0.0f;
+                    target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), timeFmt,
+                                       D2D1::RectF(timeLeft + inset, top, timeLeft + M::kTimeColW, timeBottom),
+                                       timeColor.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                    timeBrush = nullptr;
+                }
+            }
+            if (timeBrush && timeFmt) {
+                if (line.role == di_ics::AgendaRole::AllDay || !accentTime) {
+                    mutedBrush_->SetOpacity(0.78f * fade);
+                    timeBrush = mutedBrush_.Get();
+                } else {
+                    textBrush_->SetOpacity(0.94f * fade);
+                }
+                target_->DrawTextW(when.c_str(), static_cast<UINT32>(when.size()), timeFmt,
+                                   D2D1::RectF(timeLeft + (line.role == di_ics::AgendaRole::Deadline ? 8.0f : 0.0f),
+                                               top, timeLeft + M::kTimeColW, timeBottom),
+                                   timeBrush, D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
+
+            textBrush_->SetOpacity(0.96f * fade);
+            if (titleFmt) {
+                target_->DrawTextW(ev.summary.c_str(), static_cast<UINT32>(ev.summary.size()), titleFmt,
+                                   D2D1::RectF(titleLeft, top, titleRight, top + titleBand),
+                                   textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
+            if (!ev.location.empty() && metaFmt) {
+                mutedBrush_->SetOpacity(0.62f * fade);
+                target_->DrawTextW(ev.location.c_str(), static_cast<UINT32>(ev.location.size()), metaFmt,
+                                   D2D1::RectF(titleLeft, top + 22.0f, titleRight, top + line.h),
+                                   mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            }
         }
+
+        target_->PopAxisAlignedClip();
+
+        auto fadeEdge = [&](bool topEdge) {
+            const float fade = M::kFade;
+            const D2D1_RECT_F band = topEdge
+                ? D2D1::RectF(list.left, list.top, list.right, list.top + fade)
+                : D2D1::RectF(list.left, list.bottom - fade, list.right, list.bottom);
+            D2D1_COLOR_F solid = material_.base;
+            solid.a = Clamp(solid.a * settingsOpacity_, 0.0f, 1.0f);
+            D2D1_COLOR_F clear = solid;
+            clear.a = 0.0f;
+            D2D1_GRADIENT_STOP stops[2];
+            if (topEdge) {
+                stops[0] = {0.0f, solid};
+                stops[1] = {1.0f, clear};
+            } else {
+                stops[0] = {0.0f, clear};
+                stops[1] = {1.0f, solid};
+            }
+            ComPtr<ID2D1GradientStopCollection> stopsColl;
+            if (FAILED(target_->CreateGradientStopCollection(stops, 2, D2D1_GAMMA_2_2,
+                                                             D2D1_EXTEND_MODE_CLAMP, &stopsColl)) ||
+                !stopsColl) {
+                return;
+            }
+            ComPtr<ID2D1LinearGradientBrush> fadeBrush;
+            if (FAILED(target_->CreateLinearGradientBrush(
+                    D2D1::LinearGradientBrushProperties(D2D1::Point2F(band.left, band.top),
+                                                        D2D1::Point2F(band.left, band.bottom)),
+                    stopsColl.Get(), &fadeBrush)) ||
+                !fadeBrush) {
+                return;
+            }
+            target_->FillRectangle(band, fadeBrush.Get());
+        };
+        if (scroll > 0.5f) fadeEdge(true);
+        if (maxScroll - scroll > 0.5f) fadeEdge(false);
 
         textBrush_->SetOpacity(0.96f);
         mutedBrush_->SetOpacity(0.75f);
     }
+
 
     void DrawCalendarDashboard(const SharedState& state, D2D1_RECT_F rect, const Settings& settings, double now, float scale, SYSTEMTIME& local) {
         (void)now;
@@ -16367,20 +16797,19 @@ class Renderer {
             calendarCachedDate_ = local;
         }
 
-        // With a loaded calendar the left column becomes a compact date plus the
-        // next few events, and the month grid shifts right to make room. Until a
-        // feed has loaded, the hero below is the original layout.
+        // A loaded feed opens the agenda. The month grid stays available from
+        // the date card, and a calendar with no feed keeps this hero exactly.
         const GcalSnapshot* gcalSnap = state.gcal.get();
-        const bool agenda = gcalSnap && gcalSnap->loaded;
+        const bool hasFeed = gcalSnap && gcalSnap->loaded && !settings.gcalIcsUrls.empty();
+        if (hasFeed && !g_gcalShowMonth.load(std::memory_order_relaxed)) {
+            DrawCalendarAgendaList(*gcalSnap, rect, settings, local, accent.Get());
+            return;
+        }
+        g_gcalAgendaOn.store(false, std::memory_order_relaxed);
+
         float gridStart = rect.left + 134.0f * scale;
         float colW = 28.0f * scale;
 
-        if (agenda) {
-            DrawCalendarAgenda(*gcalSnap, rect, settings, scale, local, accent.Get());
-            gridStart = rect.left + 176.0f * scale;
-            const float gridRight = rect.right - 12.0f * scale;
-            colW = std::max(18.0f * scale, (gridRight - gridStart) / 7.0f);
-        } else {
         // ── Hero column ──────────────────────────────────────────────────────
         // Today's date as an editorial block: month over a large day figure over
         // the weekday. Uses the shared DrawCard so it matches every other panel
@@ -16419,21 +16848,41 @@ class Renderer {
         wchar_t dayStr[16] = {};
         swprintf_s(dayStr, L"%d", local.wDay);
         textBrush_->SetOpacity(0.97f);
+        const float dayBottom = hasFeed ? hero.bottom - 42.0f * scale : hero.bottom - 26.0f * scale;
         target_->DrawTextW(dayStr, static_cast<UINT32>(wcslen(dayStr)),
                            calDayLargeFormat_ ? calDayLargeFormat_.Get() : hugeTextFormat_.Get(),
-                           D2D1::RectF(hero.left, hero.top + 34.0f * scale,
-                                       hero.right, hero.bottom - 26.0f * scale),
+                           D2D1::RectF(hero.left, hero.top + 34.0f * scale, hero.right, dayBottom),
                            textBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_NONE);
 
         mutedBrush_->SetOpacity(0.70f);
         if (boldTextFormat_) {
+            const float weekdayTop = hasFeed ? hero.bottom - 40.0f * scale : hero.bottom - 24.0f * scale;
+            const float weekdayBottom = hasFeed ? hero.bottom - 22.0f * scale : hero.bottom - 6.0f * scale;
             target_->DrawTextW(calendarCachedWeekdayName_.c_str(),
                                static_cast<UINT32>(calendarCachedWeekdayName_.size()),
                                boldTextFormat_.Get(),
-                               D2D1::RectF(hero.left + 4.0f * scale, hero.bottom - 24.0f * scale,
-                                           hero.right - 4.0f * scale, hero.bottom - 6.0f * scale),
+                               D2D1::RectF(hero.left + 4.0f * scale, weekdayTop,
+                                           hero.right - 4.0f * scale, weekdayBottom),
                                mutedBrush_.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
+        if (hasFeed && accent && smallTextFormat_) {
+            smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            const std::wstring back = Loc(L"Agenda");
+            target_->DrawTextW(back.c_str(), static_cast<UINT32>(back.size()), smallTextFormat_.Get(),
+                               D2D1::RectF(hero.left, hero.bottom - 20.0f * scale,
+                                           hero.right, hero.bottom - 4.0f * scale),
+                               accent.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+            smallTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            smallTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+            const float inv = 1.0f / std::max(scale, 0.01f);
+            g_gcalToggleL.store((hero.left - rect.left) * inv, std::memory_order_relaxed);
+            g_gcalToggleT.store((hero.top - rect.top) * inv, std::memory_order_relaxed);
+            g_gcalToggleR.store((hero.right - rect.left) * inv, std::memory_order_relaxed);
+            g_gcalToggleB.store((hero.bottom - rect.top) * inv, std::memory_order_relaxed);
+            g_gcalToggleValid.store(true, std::memory_order_relaxed);
+        } else {
+            g_gcalToggleValid.store(false, std::memory_order_relaxed);
         }
 
         // ── Month grid ───────────────────────────────────────────────────────
@@ -16489,7 +16938,7 @@ class Renderer {
                                                  gridStart + (col + 1) * colW, datesTop + (row + 1) * rowH);
             const std::wstring dayText = std::to_wstring(d);
             const int weekday = (firstDay + col) % 7;
-            const bool hasEvent = agenda && GcalCoversDay(gcalSnap, local.wYear, local.wMonth, d);
+            const bool hasEvent = hasFeed && GcalCoversDay(gcalSnap, local.wYear, local.wMonth, d);
             // Nudge the figure up so the event dot under it doesn't sit on the digit.
             D2D1_RECT_F textCell = cell;
             if (hasEvent && d != local.wDay) {
@@ -23944,6 +24393,10 @@ class Renderer {
     ComPtr<IDWriteTextFormat> idleTextFormat_;
     ComPtr<IDWriteTextFormat> calDayLargeFormat_;
     ComPtr<IDWriteTextFormat> calGridFormat_;
+    ComPtr<IDWriteTextFormat> agendaTitleFormat_;
+    ComPtr<IDWriteTextFormat> agendaTimeFormat_;
+    ComPtr<IDWriteTextFormat> agendaMetaFormat_;
+    ComPtr<IDWriteTextFormat> agendaDayFormat_;
     ComPtr<IDWriteTextFormat> timeDashboardFormat_;
     ComPtr<IDWriteTextFormat> dateDashboardFormat_;
     ComPtr<ID2D1SolidColorBrush> accentBrush_;
@@ -25707,6 +26160,12 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
                     }
                 }
 
+                if (currentTab == CalendarTabIndex(g_settings, mediaActive) &&
+                    GcalToggleHitTest(MediaContentFromClient(pt.x, pt.y))) {
+                    SetCursor(LoadCursorW(nullptr, IDC_HAND));
+                    return TRUE;
+                }
+
                 // A File Tray row under the cursor is clickable (opens the file).
                 if (g_settings.fileTrayModule && currentTab == FileTrayTabIndex(g_settings) &&
                     (g_hoveredFileTrayRow.load(std::memory_order_relaxed) >= 0 ||
@@ -26052,6 +26511,18 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 
                 const MediaContentPoint cp = MediaContentFromClient(xPos, yPos);
 
+                if (currentTab == CalendarTabIndex(g_settings, mediaActive) && GcalToggleHitTest(cp)) {
+                    bool hasFeed = false;
+                    {
+                        std::lock_guard lock(g_stateMutex);
+                        hasFeed = g_state.gcal && g_state.gcal->loaded && !g_settings.gcalIcsUrls.empty();
+                    }
+                    if (hasFeed) {
+                        GcalToggleView();
+                        return 0;
+                    }
+                }
+
                 // File Tray: the bin clears the shelf, the cut button removes one file,
                 // and a plain click on a row opens it with its default app. (Dragging a
                 // row out is started from WM_MOUSEMOVE.)
@@ -26216,6 +26687,48 @@ LRESULT CALLBACK OverlayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             const ULONGLONG wheelNow = GetTickCount64();
             const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
             if (delta == 0) return 0;
+
+            // Calendar agenda: the wheel scrolls the list. At the top or bottom a
+            // fresh gesture falls through and switches tabs. The header and the
+            // pagination dots always switch tabs.
+            if (g_gcalAgendaOn.load(std::memory_order_relaxed)) {
+                bool mediaActive = false;
+                {
+                    std::lock_guard lock(g_stateMutex);
+                    mediaActive = g_settings.media && g_state.media.available;
+                }
+                if (NormalizedTabIndex(g_settings) == CalendarTabIndex(g_settings, mediaActive)) {
+                    POINT wheelPt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                    ScreenToClient(hwnd, &wheelPt);
+                    const MediaContentPoint wheelCp = MediaContentFromClient(wheelPt.x, wheelPt.y);
+                    if (GcalListHitTest(wheelCp)) {
+                        static float s_gcalWheelAccum = 0.0f;
+                        static ULONGLONG s_gcalGestureTick = 0;
+                        const float dir = delta > 0 ? -1.0f : 1.0f;
+                        const float current = g_gcalScroll.load(std::memory_order_relaxed);
+                        const float maxScroll = g_gcalMaxScroll.load(std::memory_order_relaxed);
+                        const bool canScroll = dir < 0.0f ? current > 0.5f : current < maxScroll - 0.5f;
+                        if (canScroll) {
+                            s_gcalGestureTick = wheelNow;
+                            if (s_gcalWheelAccum != 0.0f && ((delta > 0) != (s_gcalWheelAccum > 0.0f))) {
+                                s_gcalWheelAccum = 0.0f;
+                            }
+                            s_gcalWheelAccum += static_cast<float>(delta);
+                            const float px = s_gcalWheelAccum / static_cast<float>(WHEEL_DELTA) * 64.0f;
+                            if (std::fabs(px) >= 1.0f) {
+                                GcalScrollBy(dir * std::fabs(px));
+                                s_gcalWheelAccum = 0.0f;
+                            }
+                            return 0;
+                        }
+                        if (wheelNow - s_gcalGestureTick < 300) {
+                            s_gcalGestureTick = wheelNow;
+                            return 0;
+                        }
+                        s_gcalWheelAccum = 0.0f;
+                    }
+                }
+            }
 
             // File Tray: with the cursor over the list, the wheel scrolls it row by row.
             // At the top / bottom edge the list swallows leftover inertia of the same
@@ -26953,6 +27466,24 @@ DWORD WINAPI RenderThreadProc(void*) {
                 } else if (g_settings.mediaPillClock) {
                     primary.width = (MediaPillLayout::kBaseWidth + clockSection) * g_settings.sizeScale;
                 }
+            }
+        }
+
+        // Agenda needs more room than the 380x184 dashboards. Only the calendar
+        // tab grows, and only while a feed is showing the agenda. sizeScale
+        // already includes the DPI factor.
+        if (snapshot.gcal && snapshot.gcal->loaded && !g_settings.gcalIcsUrls.empty() &&
+            !g_gcalShowMonth.load(std::memory_order_relaxed) &&
+            !(primary.kind == IslandKind::Idle &&
+              (g_settings.gameOverlay || g_gameOverlayPinned.load()))) {
+            const bool mediaSurface = primary.kind == IslandKind::Media;
+            const bool expanded = mediaSurface
+                ? (!isFullscreen && (isHoverExpanded || pinned || recentTrackChange))
+                : (primary.kind == IslandKind::Idle && !isFullscreen && (pinned || isHoverExpanded));
+            if (expanded &&
+                NormalizedTabIndex(g_settings) == CalendarTabIndex(g_settings, mediaSurface)) {
+                primary.width = di_ics::AgendaMetrics::kPanelW * g_settings.sizeScale;
+                primary.height = di_ics::AgendaMetrics::kPanelH * g_settings.sizeScale;
             }
         }
 

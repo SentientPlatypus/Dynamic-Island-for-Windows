@@ -139,7 +139,7 @@ This fork can show events from Google Calendar without signing in. It reads the 
 3. Choose **Settings and sharing**.
 4. Scroll to **Integrate calendar** and copy **Secret address in iCal format**. It looks like `https://calendar.google.com/calendar/ical/.../basic.ics`.
 5. In Windhawk, open this mod's settings and paste that address into **Google Calendar → iCal URLs**. More than one calendar is fine: separate the addresses with commas or put each one on its own line.
-6. Days with events get a small dot, and the next few events (time and title) show beside the month. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
+6. The calendar tab opens as an agenda: events grouped under **Today**, **Tomorrow**, and a date, with the time on the left and the title on the right. Deadlines read as **Due 11:59 PM**. Scroll when the list is longer than the panel. Click the date card, or the **Month** chip, to switch to the month grid. **Upcoming event on the collapsed island** shows a line such as `CS 4789 in 12 min` shortly before a timed event starts. Media and lyrics still take the pill when they are active.
 
 The secret address is a private link. Anyone who has it can read that calendar, so treat it like a password. The feed refreshes in the background (every 15 minutes by default).
 
@@ -157,7 +157,7 @@ Found a bug? Have a cool feature idea? We want to hear from you! Please drop an 
 ## 🙌 Shoutouts
 
 - **[Himanshu (devcode90)](https://github.com/devcode90)**: Original author of Dynamic Island for Windows.
-- **[Geneustace Wicaksono (SentientPlatypus)](https://github.com/SentientPlatypus)**: Google Calendar fork. Events from a private iCal address on the calendar tab, and an upcoming-event heads-up on the collapsed island.
+- **[Geneustace Wicaksono (SentientPlatypus)](https://github.com/SentientPlatypus)**: Google Calendar fork. An agenda of the next few days from a private iCal address, with the month grid one click away, and an upcoming-event heads-up on the collapsed island.
 - **[Sarthak Singh (sarthakaksh)](https://github.com/sarthakaksh)**: Major feature overhaul including smoothing animations, strip mode, lyrics for songs, song recognition (Shazam),  quick lookup, Cross-Source Media Switching, the right-click focus timer, hover clock, robust media controls, zero-CPU instant hide shortcut, Bluetooth battery integration, image clipboard thumbnails, and full-screen autohide fixes.
 - **[ciizerr](https://github.com/ciizerr)**: Massive thanks for fixing UI alignments, smoothing out the dashboard sizing, and polishing the calendar and weather tabs.
 - **[ChrisSch-dev @GitHub](https://github.com/ChrisSch-dev)**: Added album title support, word wrapping for weather descriptions, sleep resume fixes, and various performance/movement stability improvements.
